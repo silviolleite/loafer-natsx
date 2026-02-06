@@ -15,51 +15,120 @@ const (
 Route represents a message consumption route definition.
 */
 type Route struct {
-	Type   Type
-	Config *Config
+	routeType Type
+	cfg       *config
+}
+
+/*
+Type returns the consumer type.
+*/
+func (r *Route) Type() Type {
+	return r.routeType
+}
+
+/*
+Subject returns the route subject.
+*/
+func (r *Route) Subject() string {
+	return r.cfg.subject
+}
+
+/*
+QueueGroup returns the queue group if configured.
+*/
+func (r *Route) QueueGroup() string {
+	return r.cfg.queueGroup
+}
+
+/*
+Stream returns the JetStream stream name.
+*/
+func (r *Route) Stream() string {
+	return r.cfg.stream
+}
+
+/*
+Durable returns the JetStream durable name.
+*/
+func (r *Route) Durable() string {
+	return r.cfg.durable
+}
+
+/*
+AckWait returns the JetStream acknowledgment wait duration.
+*/
+func (r *Route) AckWait() time.Duration {
+	return r.cfg.ackWait
+}
+
+/*
+MaxDeliver returns the JetStream max delivery attempts.
+*/
+func (r *Route) MaxDeliver() int {
+	return r.cfg.maxDeliver
+}
+
+/*
+DLQEnabled indicates whether DLQ is enabled.
+*/
+func (r *Route) DLQEnabled() bool {
+	return r.cfg.enableDLQ
+}
+
+/*
+ReplyFunc returns the reply function if configured.
+*/
+func (r *Route) ReplyFunc() ReplyFunc {
+	return r.cfg.reply
+}
+
+/*
+HandlerTimeout returns the configured handler timeout.
+*/
+func (r *Route) HandlerTimeout() time.Duration {
+	return r.cfg.handlerTimeout
 }
 
 /*
 NewRoute creates a validated Route definition applying default values when necessary.
 */
-func NewRoute(t Type, subject string, opts ...Option) (*Route, error) {
-	cfg := &Config{
-		Subject: subject,
+func NewRoute(routeType Type, subject string, opts ...Option) (*Route, error) {
+	cfg := &config{
+		subject: subject,
 	}
 
 	for _, opt := range opts {
 		opt(cfg)
 	}
 
-	if cfg.Subject == "" {
+	if cfg.subject == "" {
 		return nil, loafernastx.ErrMissingSubject
 	}
 
-	switch t {
-
-	case TypeQueue:
-		if cfg.QueueGroup == "" {
+	switch routeType {
+	case RouteTypeQueue:
+		if cfg.queueGroup == "" {
 			return nil, loafernastx.ErrMissingQueueGroup
 		}
 
-	case TypeJetStream:
-		if cfg.Stream == "" {
+	case RouteTypeJetStream:
+		if cfg.stream == "" {
 			return nil, loafernastx.ErrMissingStream
 		}
-		if cfg.Durable == "" {
+		if cfg.durable == "" {
 			return nil, loafernastx.ErrMissingDurable
 		}
-		if cfg.MaxDeliver == 0 {
-			cfg.MaxDeliver = defaultMaxDeliveries
+		if cfg.maxDeliver == 0 {
+			cfg.maxDeliver = defaultMaxDeliveries
 		}
-		if cfg.AckWait == 0 {
-			cfg.AckWait = defaultAckWait
+		if cfg.ackWait == 0 {
+			cfg.ackWait = defaultAckWait
 		}
 
-	case TypeRequestReply:
+	case RouteTypeRequestReply:
 		// nothing required beyond subject
 
-	case TypePubSub:
+	case RouteTypePubSub:
 		// nothing required beyond subject
 
 	default:
@@ -67,7 +136,7 @@ func NewRoute(t Type, subject string, opts ...Option) (*Route, error) {
 	}
 
 	return &Route{
-		Type:   t,
-		Config: cfg,
+		routeType: routeType,
+		cfg:       cfg,
 	}, nil
 }

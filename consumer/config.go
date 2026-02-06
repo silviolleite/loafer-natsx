@@ -13,27 +13,16 @@ handlerErr is the error returned by the handler (if any).
 */
 type ReplyFunc func(ctx context.Context, result any, handlerErr error) ([]byte, nats.Header, error)
 
-/*
-Config defines how a consumer route should behave.
-*/
-type Config struct {
-	Subject    string
-	QueueGroup string
-
-	// JetStream-specific
-	Stream     string
-	Durable    string
-	AckWait    time.Duration
-	MaxDeliver int
-
-	FIFO        bool
-	DedupWindow time.Duration
-
-	// DLQ
-	EnableDLQ  bool
-	DLQSubject string
-
-	// RequestReply-specific
-	Reply          ReplyFunc
-	HandlerTimeout time.Duration
+type config struct {
+	subject        string
+	queueGroup     string
+	stream         string
+	durable        string
+	ackWait        time.Duration
+	maxDeliver     int
+	fifo           bool
+	dedupWindow    time.Duration
+	enableDLQ      bool
+	reply          ReplyFunc
+	handlerTimeout time.Duration
 }

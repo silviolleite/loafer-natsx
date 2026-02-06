@@ -3,18 +3,12 @@ package processor
 import (
 	"context"
 	"strconv"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/silviolleite/loafer-natsx"
 	"github.com/silviolleite/loafer-natsx/consumer"
-)
-
-const (
-	defaultMaxDeliveries = 10
-	defaultAckWait       = 30 * time.Second
 )
 
 /*
@@ -46,9 +40,9 @@ func New(nc *nats.Conn, logger Logger) (*Processor, error) {
 Start begins consuming messages based on the provided route and handler.
 */
 func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
-	switch route.Type {
-	case consumer.TypePubSub:
-		_, err := p.nc.Subscribe(route.Config.Subject, func(msg *nats.Msg) {
+	switch route.Type() {
+	case consumer.RouteTypePubSub:
+		_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 			_, err := handler(ctx, msg.Data)
 			if err != nil {
 				p.logger.Error("handler error", "subject", msg.Subject, "err", err)
@@ -56,8 +50,8 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 		})
 		return err
 
-	case consumer.TypeQueue:
-		_, err := p.nc.QueueSubscribe(route.Config.Subject, route.Config.QueueGroup, func(msg *nats.Msg) {
+	case consumer.RouteTypeQueue:
+		_, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
 			_, err := handler(ctx, msg.Data)
 			if err != nil {
 				p.logger.Error("handler error", "subject", msg.Subject, "err", err)
@@ -65,11 +59,11 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 		})
 		return err
 
-	case consumer.TypeRequestReply:
-		_, err := p.nc.Subscribe(route.Config.Subject, func(msg *nats.Msg) {
+	case consumer.RouteTypeRequestReply:
+		_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 			result, hErr := handler(ctx, msg.Data)
 
-			if route.Config.Reply == nil {
+			if route.ReplyFunc() == nil {
 				if hErr != nil {
 					p.logger.Error("handler error", "subject", msg.Subject, "err", hErr)
 					return
@@ -80,7 +74,7 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 				return
 			}
 
-			data, headers, rErr := route.Config.Reply(ctx, result, hErr)
+			data, headers, rErr := route.ReplyFunc()(ctx, result, hErr)
 			if rErr != nil {
 				p.logger.Error("reply builder error", "subject", msg.Subject, "err", rErr)
 				return
@@ -100,16 +94,16 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 		})
 		return err
 
-	case consumer.TypeJetStream:
+	case consumer.RouteTypeJetStream:
 		consumerCfg := jetstream.ConsumerConfig{
-			Durable:       route.Config.Durable,
+			Durable:       route.Durable(),
 			AckPolicy:     jetstream.AckExplicitPolicy,
-			MaxDeliver:    route.Config.MaxDeliver,
-			AckWait:       route.Config.AckWait,
-			FilterSubject: route.Config.Subject,
+			MaxDeliver:    route.MaxDeliver(),
+			AckWait:       route.AckWait(),
+			FilterSubject: route.Subject(),
 		}
 
-		cons, err := p.js.CreateOrUpdateConsumer(ctx, route.Config.Stream, consumerCfg)
+		cons, err := p.js.CreateOrUpdateConsumer(ctx, route.Stream(), consumerCfg)
 		if err != nil {
 			return err
 		}
@@ -119,14 +113,14 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 			_, hErr := handler(ctx, msg.Data())
 
 			if hErr != nil {
-				p.logger.Error("handler error", "subject", route.Config.Subject, "err", hErr)
+				p.logger.Error("handler error", "subject", route.Subject(), "err", hErr)
 
-				if route.Config.EnableDLQ && int(meta.NumDelivered) >= route.Config.MaxDeliver {
+				if route.DLQEnabled() && int(meta.NumDelivered) >= route.MaxDeliver() {
 					headers := nats.Header{}
 					headers.Set("X-Error", hErr.Error())
 					headers.Set("X-Retry-Count", strconv.Itoa(int(meta.NumDelivered)))
 
-					dlqSubject := "dlq." + route.Config.Subject
+					dlqSubject := "dlq." + route.Subject()
 					if pubErr := p.nc.PublishMsg(&nats.Msg{
 						Subject: dlqSubject,
 						Header:  headers,
@@ -138,19 +132,19 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 					}
 
 					if ackErr := msg.Ack(); ackErr != nil {
-						p.logger.Error("ack error after dlq", "subject", route.Config.Subject, "err", ackErr)
+						p.logger.Error("ack error after dlq", "subject", route.Subject(), "err", ackErr)
 					}
 					return
 				}
 
 				if nakErr := msg.Nak(); nakErr != nil {
-					p.logger.Error("nak error", "subject", route.Config.Subject, "err", nakErr)
+					p.logger.Error("nak error", "subject", route.Subject(), "err", nakErr)
 				}
 				return
 			}
 
 			if ackErr := msg.Ack(); ackErr != nil {
-				p.logger.Error("ack error", "subject", route.Config.Subject, "err", ackErr)
+				p.logger.Error("ack error", "subject", route.Subject(), "err", ackErr)
 			}
 		})
 
