@@ -1,0 +1,17 @@
+
+- Evolua o processor para:
+    - receber uma interface de logs e iremos logar todos os erros ao invés de ignorá-los.
+    - No consumo de JetStream  poderíamos utilizar o "github.com/nats-io/nats.go/jetstream" e aplicar as melhoria de que se uma DLQ está setada quando o meta.NumDelivered >= maxDeliveries deveriamos enviar produzir uma mensagen no subject com o prefixo "dlq." + o subject da rota. Adicionar na mensagem os dados headers := nats.Header{}
+		headers.Set("X-Error", err.Error())
+		headers.Set("X-Retry-Count", "0") e  dar um ack na mensagem original.
+
+    - No tipo RequestReply a resposta poderia também estar configurada com uma função de reply para deixar que o software decida o conteúdo do retorno.
+
+Pode ser que precise mexer nos outro pacotes e okay para isso
+
+
+
+🔁 Retry policy configurável no consumer
+⏱ Timeout de handler por rota
+📦 Middleware chain (logging, tracing, metrics)
+
