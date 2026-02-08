@@ -89,6 +89,16 @@ func (r *Route) HandlerTimeout() time.Duration {
 	return r.cfg.handlerTimeout
 }
 
+// DedupWindow returns the deduplication window duration configured for the route.
+func (r *Route) DedupWindow() time.Duration {
+	return r.cfg.dedupWindow
+}
+
+// DeliveryPolicy returns the configured delivery policy for consuming messages from the stream.
+func (r *Route) DeliveryPolicy() DeliverPolicy {
+	return r.cfg.deliveryPolicy
+}
+
 /*
 NewRoute creates a validated Route definition applying default values when necessary.
 */

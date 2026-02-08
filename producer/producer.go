@@ -45,24 +45,34 @@ func New(nc *nats.Conn, subject string, opts ...Option) (*Producer, error) {
 /*
 Publish sends a message using JetStream if available, otherwise Core NATS.
 */
-func (p *Producer) Publish(ctx context.Context, data []byte) error {
+func (p *Producer) Publish(ctx context.Context, data []byte, opts ...PublishOption) error {
+	pubCfg := publishOptions{}
+
+	for _, opt := range opts {
+		opt(&pubCfg)
+	}
+
+	msg := &nats.Msg{
+		Subject: p.cfg.subject,
+		Data:    data,
+	}
+
+	if pubCfg.headers != nil {
+		msg.Header = pubCfg.headers
+	}
+
 	if p.js != nil {
-		msg := &nats.Msg{
-			Subject: p.cfg.subject,
-			Data:    data,
+		var jsOpts []jetstream.PublishOpt
+
+		if pubCfg.msgID != "" {
+			jsOpts = append(jsOpts, jetstream.WithMsgID(pubCfg.msgID))
 		}
 
-		opts := []jetstream.PublishOpt{}
-
-		if p.cfg.dedupID != "" {
-			opts = append(opts, jetstream.WithMsgID(p.cfg.dedupID))
-		}
-
-		_, err := p.js.PublishMsg(ctx, msg, opts...)
+		_, err := p.js.PublishMsg(ctx, msg, jsOpts...)
 		return err
 	}
 
-	return p.nc.Publish(p.cfg.subject, data)
+	return p.nc.PublishMsg(msg)
 }
 
 /*

@@ -25,4 +25,5 @@ type config struct {
 	enableDLQ      bool
 	reply          ReplyFunc
 	handlerTimeout time.Duration
+	deliveryPolicy DeliverPolicy
 }

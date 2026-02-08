@@ -18,6 +18,12 @@ const (
 
 	// ErrMissingDurable indicates an error when a durable name is required but not provided for a jetstream consumer.
 	ErrMissingDurable = Err("durable name is required for jetstream consumer")
+
+	// ErrMissingName indicates an error when a stream name is required but not provided.
+	ErrMissingName = Err("stream name is required")
+
+	// ErrMissingSubjects indicates that at least one subject must be specified.
+	ErrMissingSubjects = Err("at least one subject is required")
 )
 
 // Err represents an error as a string type and implements the error interface.
