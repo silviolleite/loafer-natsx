@@ -95,17 +95,6 @@ func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler Ha
 		return err
 
 	case consumer.RouteTypeJetStream:
-		if route.DedupWindow() > 0 {
-			_, err := p.js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{
-				Name:       route.Stream(),
-				Subjects:   []string{route.Subject()},
-				Duplicates: route.DedupWindow(),
-			})
-			if err != nil {
-				return err
-			}
-		}
-
 		consumerCfg := jetstream.ConsumerConfig{
 			Durable:       route.Durable(),
 			AckPolicy:     jetstream.AckExplicitPolicy,

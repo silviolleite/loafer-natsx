@@ -83,10 +83,3 @@ func WithFifo(enable bool) Option {
 		c.fifo = enable
 	}
 }
-
-// WithDedupWindow sets the duration of the deduplication window for message processing.
-func WithDedupWindow(d time.Duration) Option {
-	return func(c *config) {
-		c.dedupWindow = d
-	}
-}

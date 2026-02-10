@@ -21,7 +21,6 @@ type config struct {
 	ackWait        time.Duration
 	maxDeliver     int
 	fifo           bool
-	dedupWindow    time.Duration
 	enableDLQ      bool
 	reply          ReplyFunc
 	handlerTimeout time.Duration
