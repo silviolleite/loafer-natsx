@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nats-io/nats.go/jetstream"
+
 	loafernastx "github.com/silviolleite/loafer-natsx"
 )
 
@@ -11,9 +12,7 @@ const (
 	defaultReplicas = 1
 )
 
-/*
-Ensure creates or updates a JetStream stream with the provided configuration.
-*/
+// Ensure validates and creates or updates a JetStream stream with the given name and configuration options.
 func Ensure(ctx context.Context, js jetstream.JetStream, name string, opts ...Option) error {
 	if name == "" {
 		return loafernastx.ErrMissingName
