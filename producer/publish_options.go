@@ -9,21 +9,18 @@ type publishOptions struct {
 	headers nats.Header
 }
 
+// PublishOption represents a functional option for configuring the behavior of a publish operation.
 type PublishOption func(*publishOptions)
 
-/*
-WithMsgID sets the JetStream message ID for deduplication.
-*/
-func WithMsgID(id string) PublishOption {
+// PublishWithMsgID sets a custom message ID for the publish operation by modifying the publishOptions.
+func PublishWithMsgID(id string) PublishOption {
 	return func(p *publishOptions) {
 		p.msgID = id
 	}
 }
 
-/*
-WithHeaders sets custom headers for the message.
-*/
-func WithHeaders(h nats.Header) PublishOption {
+// PublishWithHeaders sets the headers for the message by updating the publishOptions with the provided nats.Header.
+func PublishWithHeaders(h nats.Header) PublishOption {
 	return func(p *publishOptions) {
 		p.headers = h
 	}

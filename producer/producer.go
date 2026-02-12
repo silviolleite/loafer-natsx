@@ -2,49 +2,86 @@ package producer
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+
+	loafernastx "github.com/silviolleite/loafer-natsx"
+	"github.com/silviolleite/loafer-natsx/logger"
 )
 
-/*
-Producer wraps NATS publishing capabilities.
-*/
+// Producer is a type that enables publishing and request-reply messaging using NATS and JetStream.
 type Producer struct {
 	nc  *nats.Conn
 	js  jetstream.JetStream
 	cfg config
 }
 
-/*
-New creates a new Producer instance.
-*/
-func New(nc *nats.Conn, subject string, opts ...Option) (*Producer, error) {
+// NewCore creates a Producer using Core NATS.
+func NewCore(nc *nats.Conn, subject string, opts ...Option) (*Producer, error) {
 	if subject == "" {
-		return nil, errors.New("subject is required")
+		return nil, loafernastx.ErrMissingSubject
 	}
 
 	cfg := config{
 		subject: subject,
+		log:     logger.NopLogger{},
 	}
 
 	for _, opt := range opts {
 		opt(&cfg)
 	}
 
-	js, _ := jetstream.New(nc)
-
 	return &Producer{
 		nc:  nc,
+		cfg: cfg,
+	}, nil
+}
+
+// NewJetStream creates a Producer using JetStream.
+func NewJetStream(js jetstream.JetStream, subject string, opts ...Option) (*Producer, error) {
+	err := validateStream(js, subject)
+	if err != nil {
+		return nil, err
+	}
+
+	if subject == "" {
+		return nil, loafernastx.ErrMissingSubject
+	}
+
+	cfg := config{
+		subject: subject,
+		log:     logger.NopLogger{},
+	}
+
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	return &Producer{
 		js:  js,
 		cfg: cfg,
 	}, nil
 }
 
-/*
-Publish sends a message using JetStream if available, otherwise Core NATS.
-*/
+func validateStream(js jetstream.JetStream, stream string) error {
+	if stream == "" {
+		return loafernastx.ErrMissingStream
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if _, err := js.AccountInfo(ctx); err != nil {
+		return fmt.Errorf("jetstream not operational: %w", err)
+	}
+
+	return nil
+}
+
+// Publish sends a message using JetStream if available, otherwise Core NATS.
 func (p *Producer) Publish(ctx context.Context, data []byte, opts ...PublishOption) error {
 	pubCfg := publishOptions{}
 
@@ -66,18 +103,37 @@ func (p *Producer) Publish(ctx context.Context, data []byte, opts ...PublishOpti
 
 		if pubCfg.msgID != "" {
 			jsOpts = append(jsOpts, jetstream.WithMsgID(pubCfg.msgID))
+			p.cfg.log.Info(
+				"publishing with msg_id (JetStream deduplication enabled)",
+				"msg_id", pubCfg.msgID,
+				"dedup_window_default", "2m (if not configured in stream)",
+			)
 		}
 
+		p.cfg.log.Debug(
+			"publishing message",
+			"subject", p.cfg.subject,
+			"jetstream", true,
+			"msg_id", pubCfg.msgID,
+			"payload_bytes", len(msg.Data),
+			"headers_count", len(msg.Header),
+		)
 		_, err := p.js.PublishMsg(ctx, msg, jsOpts...)
 		return err
 	}
 
+	p.cfg.log.Debug(
+		"publishing message",
+		"subject", p.cfg.subject,
+		"nats_core", true,
+		"payload_bytes", len(msg.Data),
+		"headers_count", len(msg.Header),
+	)
 	return p.nc.PublishMsg(msg)
 }
 
-/*
-Request performs a request-reply interaction.
-*/
+// Request sends a request with the provided data and context to the subject and waits for a response.
+// Returns the response data or an error if the request fails.
 func (p *Producer) Request(ctx context.Context, data []byte) ([]byte, error) {
 	msg, err := p.nc.RequestWithContext(ctx, p.cfg.subject, data)
 	if err != nil {
