@@ -4,8 +4,8 @@ const (
 	// ErrUnsupportedType indicates an error when an unsupported consumer type is encountered.
 	ErrUnsupportedType = Err("unsupported consumer type")
 
-	// ErrNilConfig represents an error indicating that the consumer configuration cannot be nil.
-	ErrNilConfig = Err("consumer config cannot be nil")
+	// ErrMissingURL indicates that a connect URL is required but was not provided.
+	ErrMissingURL = Err("connect URL is required")
 
 	// ErrMissingSubject indicates an error when the required subject is not provided.
 	ErrMissingSubject = Err("subject is required")
@@ -24,6 +24,9 @@ const (
 
 	// ErrMissingSubjects indicates that at least one subject must be specified.
 	ErrMissingSubjects = Err("at least one subject is required")
+
+	// ErrNilJetStream indicates that a JetStream instance is required but was not provided.
+	ErrNilJetStream = Err("jetstream instance is required")
 )
 
 // Err represents an error as a string type and implements the error interface.
