@@ -1,4 +1,4 @@
-package producer
+package jetstream
 
 import (
 	"context"
@@ -19,29 +19,8 @@ type Producer struct {
 	cfg config
 }
 
-// NewCore creates a Producer using Core NATS.
-func NewCore(nc *nats.Conn, subject string, opts ...Option) (*Producer, error) {
-	if subject == "" {
-		return nil, loafernastx.ErrMissingSubject
-	}
-
-	cfg := config{
-		subject: subject,
-		log:     logger.NopLogger{},
-	}
-
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-
-	return &Producer{
-		nc:  nc,
-		cfg: cfg,
-	}, nil
-}
-
-// NewJetStream creates a Producer using JetStream.
-func NewJetStream(js jetstream.JetStream, subject string, opts ...Option) (*Producer, error) {
+// New creates a Producer using JetStream.
+func New(js jetstream.JetStream, subject string, opts ...Option) (*Producer, error) {
 	err := validateStream(js, subject)
 	if err != nil {
 		return nil, err
@@ -98,38 +77,36 @@ func (p *Producer) Publish(ctx context.Context, data []byte, opts ...PublishOpti
 		msg.Header = pubCfg.headers
 	}
 
-	if p.js != nil {
-		var jsOpts []jetstream.PublishOpt
+	var jsOpts []jetstream.PublishOpt
 
-		if pubCfg.msgID != "" {
-			jsOpts = append(jsOpts, jetstream.WithMsgID(pubCfg.msgID))
-			p.cfg.log.Info(
-				"publishing with msg_id (JetStream deduplication enabled)",
-				"msg_id", pubCfg.msgID,
-				"dedup_window_default", "2m (if not configured in stream)",
-			)
-		}
-
-		p.cfg.log.Debug(
-			"publishing message",
-			"subject", p.cfg.subject,
-			"jetstream", true,
+	if pubCfg.msgID != "" {
+		jsOpts = append(jsOpts, jetstream.WithMsgID(pubCfg.msgID))
+		p.cfg.log.Info(
+			"publishing with msg_id (JetStream deduplication enabled)",
 			"msg_id", pubCfg.msgID,
-			"payload_bytes", len(msg.Data),
-			"headers_count", len(msg.Header),
+			"dedup_window_default", "2m (if not configured in stream)",
 		)
-		_, err := p.js.PublishMsg(ctx, msg, jsOpts...)
-		return err
 	}
 
 	p.cfg.log.Debug(
 		"publishing message",
 		"subject", p.cfg.subject,
-		"nats_core", true,
+		"jetstream", true,
+		"msg_id", pubCfg.msgID,
 		"payload_bytes", len(msg.Data),
 		"headers_count", len(msg.Header),
 	)
-	return p.nc.PublishMsg(msg)
+	ack, err := p.js.PublishMsg(ctx, msg, jsOpts...)
+	if err != nil {
+		return err
+	}
+
+	p.cfg.log.Debug("published message",
+		"ack_sequence", ack.Sequence,
+		"ack_stream", ack.Stream,
+	)
+
+	return nil
 }
 
 // Request sends a request with the provided data and context to the subject and waits for a response.

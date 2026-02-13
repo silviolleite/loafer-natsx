@@ -11,7 +11,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/silviolleite/loafer-natsx/conn"
-	"github.com/silviolleite/loafer-natsx/producer"
+	producer "github.com/silviolleite/loafer-natsx/producer/jetstream"
 	"github.com/silviolleite/loafer-natsx/stream"
 )
 
@@ -56,7 +56,7 @@ func main() {
 	}
 
 	// Create producer
-	prod, err := producer.NewJetStream(
+	prod, err := producer.New(
 		js, "orders.new",
 		producer.WithLogger(logger),
 	)
@@ -69,18 +69,18 @@ func main() {
 	nMax := 1000.0
 	for i := 1; i <= 20; i++ {
 		data := fmt.Sprintf(`{"order_id": "%d", "amount": %.2f}`, i, nMin+rand.Float64()*(nMax-nMin))
-		// Publish without deduplication and custom headers
-		err = prod.Publish(ctx, []byte(data))
+		// // Publish without deduplication and custom headers
+		// err = prod.Publish(ctx, []byte(data))
 		// Publish with message ID (deduplication) and custom headers
-		// err = prod.Publish(
-		// 	ctx, []byte(data),
-		// 	// WithMsgID sets the JetStream deduplication ID for the message
-		// 	// It will use the Deduplication window configured in the stream or default to 2 minutes
-		// 	producer.PublishWithMsgID(fmt.Sprintf("%d", i)),
-		// 	producer.PublishWithHeaders(nats.Header{
-		// 		"MY-CUSTOM-READER": []string{"my-custom-value"},
-		// 	}),
-		// )
+		err = prod.Publish(
+			ctx, []byte(data),
+			// WithMsgID sets the JetStream deduplication ID for the message
+			// It will use the Deduplication window configured in the stream or default to 2 minutes
+			producer.PublishWithMsgID(fmt.Sprintf("%d", i)),
+			producer.PublishWithHeaders(nats.Header{
+				"MY-CUSTOM-READER": []string{"my-custom-value"},
+			}),
+		)
 		if err != nil {
 			slog.Error("publish failed: %v", err)
 			continue
@@ -88,4 +88,66 @@ func main() {
 	}
 
 	slog.Info("done")
+	// output:
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=1 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=1 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=21 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=2 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=2 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=22 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=3 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=3 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=23 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=4 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=4 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=24 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=5 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=5 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=25 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=6 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=6 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=26 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=7 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=7 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=27 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=8 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=8 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=28 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=9 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=9 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=29 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=10 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=10 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=30 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=11 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=11 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=31 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=12 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=12 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=32 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=13 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=13 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=33 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=14 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=14 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=34 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=15 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=15 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=35 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=16 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=16 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=36 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=17 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=17 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=37 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=18 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=18 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=38 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=19 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=19 payload_bytes=36 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=39 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO publishing with msg_id (JetStream deduplication enabled) msg_id=20 dedup_window_default="2m (if not configured in stream)"
+	// 2026/02/13 14:12:26 DEBUG publishing message subject=orders.new jetstream=true msg_id=20 payload_bytes=35 headers_count=1
+	// 2026/02/13 14:12:26 DEBUG published message ack_sequence=40 ack_stream=ORDERS
+	// 2026/02/13 14:12:26 INFO done
 }

@@ -1,4 +1,4 @@
-package producer
+package jetstream
 
 import (
 	"github.com/nats-io/nats.go"
