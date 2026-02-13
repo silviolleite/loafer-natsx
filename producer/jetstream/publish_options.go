@@ -5,8 +5,8 @@ import (
 )
 
 type publishOptions struct {
-	msgID   string
 	headers nats.Header
+	msgID   string
 }
 
 // PublishOption represents a functional option for configuring the behavior of a publish operation.

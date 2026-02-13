@@ -29,7 +29,7 @@ func main() {
 		conn.WithTimeout(5*time.Second),
 	)
 	if err != nil {
-		slog.Error("failed to connect to nats: %v", err)
+		slog.Error("failed to connect to nats", "error", err)
 		return
 	}
 	defer nc.Close()
@@ -37,7 +37,7 @@ func main() {
 	// Create JetStream context
 	js, err := jetstream.New(nc)
 	if err != nil {
-		slog.Error("failed to create jetstream: %v", err)
+		slog.Error("failed to create jetstream", "error", err)
 		return
 	}
 
@@ -51,7 +51,7 @@ func main() {
 		// stream.WithDuplicateWindow(1 * time.Minute),
 	)
 	if err != nil {
-		slog.Error("failed to ensure stream: %v", err)
+		slog.Error("failed to ensure stream", "error", err)
 		return
 	}
 
@@ -61,7 +61,7 @@ func main() {
 		producer.WithLogger(logger),
 	)
 	if err != nil {
-		slog.Error("failed to create producer: %v", err)
+		slog.Error("failed to create producer", "error", err)
 		return
 	}
 
@@ -82,7 +82,7 @@ func main() {
 			}),
 		)
 		if err != nil {
-			slog.Error("publish failed: %v", err)
+			slog.Error("publish failed", "error", err)
 			continue
 		}
 	}

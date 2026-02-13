@@ -7,13 +7,14 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	"github.com/silviolleite/loafer-natsx"
+	loafernastx "github.com/silviolleite/loafer-natsx"
 )
 
 const (
-	defaultReconnectWait = 2 * time.Second
-	defaultMaxReconnects = -1
-	defaultTimeout       = 5 * time.Second
+	defaultReconnectWait   = 2 * time.Second
+	defaultMaxReconnects   = -1
+	defaultTimeout         = 5 * time.Second
+	randomSuffixNameLength = 4
 )
 
 // Connect establishes a connection to a NATS server and returns a *nats.Conn.
@@ -50,7 +51,7 @@ func Connect(url string, opts ...Option) (*nats.Conn, error) {
 
 // randomSuffix generates a short random hex string.
 func randomSuffix() string {
-	b := make([]byte, 4)
+	b := make([]byte, randomSuffixNameLength)
 	if _, err := rand.Read(b); err != nil {
 		return "unknown"
 	}

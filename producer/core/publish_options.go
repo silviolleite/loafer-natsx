@@ -5,7 +5,6 @@ import (
 )
 
 type publishOptions struct {
-	msgID   string
 	headers nats.Header
 }
 

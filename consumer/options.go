@@ -46,9 +46,9 @@ func WithAckWait(d time.Duration) Option {
 /*
 WithMaxDeliver sets the maximum delivery attempts.
 */
-func WithMaxDeliver(max int) Option {
+func WithMaxDeliver(n int) Option {
 	return func(c *config) {
-		c.maxDeliver = max
+		c.maxDeliver = n
 	}
 }
 

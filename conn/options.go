@@ -2,6 +2,7 @@ package conn
 
 import "time"
 
+// Option is a functional option type used to configure connection settings dynamically.
 type Option func(*config)
 
 // WithName sets the connection name.

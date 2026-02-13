@@ -2,7 +2,7 @@ package processor
 
 import "github.com/nats-io/nats.go"
 
-func propagateHeaders(from *nats.Msg, to *nats.Msg) {
+func propagateHeaders(from, to *nats.Msg) {
 	if from.Header == nil {
 		return
 	}

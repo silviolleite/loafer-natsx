@@ -3,7 +3,7 @@ package consumer
 import (
 	"time"
 
-	"github.com/silviolleite/loafer-natsx"
+	loafernastx "github.com/silviolleite/loafer-natsx"
 )
 
 const (
@@ -15,8 +15,8 @@ const (
 Route represents a message consumption route definition.
 */
 type Route struct {
-	routeType Type
 	cfg       *config
+	routeType Type
 }
 
 /*

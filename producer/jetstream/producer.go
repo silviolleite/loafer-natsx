@@ -12,6 +12,10 @@ import (
 	"github.com/silviolleite/loafer-natsx/logger"
 )
 
+const (
+	defaultJSValidateTimeout = 2 + time.Second
+)
+
 // Producer is a type that enables publishing and request-reply messaging using NATS and JetStream.
 type Producer struct {
 	nc  *nats.Conn
@@ -50,7 +54,7 @@ func validateStream(js jetstream.JetStream, stream string) error {
 		return loafernastx.ErrMissingStream
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), defaultJSValidateTimeout)
 	defer cancel()
 
 	if _, err := js.AccountInfo(ctx); err != nil {

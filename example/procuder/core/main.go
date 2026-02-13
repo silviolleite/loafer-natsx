@@ -38,7 +38,7 @@ func main() {
 		coreProducer.WithLogger(logger),
 	)
 	if err != nil {
-		slog.Error("failed to create coreProducer: %v", err)
+		slog.Error("failed to create coreProducer", "error", err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func main() {
 			"order-type": []string{"new"},
 		}))
 		if err != nil {
-			slog.Error("publish failed: %v", err)
+			slog.Error("publish failed", "error", err)
 			continue
 		}
 	}
