@@ -54,30 +54,49 @@ func (p *Consumer) Start(ctx context.Context, route *router.Route, handler Handl
 }
 
 func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler HandlerFunc) error {
-	_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
+	sub, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 		_, err := handler(ctx, msg.Data)
 		if err != nil {
 			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 		}
 	})
-	return err
+
+	if err != nil {
+		return err
+	}
+
+	p.drainOnCancel(ctx, func() { _ = sub.Drain() })
+
+	return nil
 }
 
 func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler HandlerFunc) error {
-	_, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
+	sub, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
 		_, err := handler(ctx, msg.Data)
 		if err != nil {
 			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 		}
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	p.drainOnCancel(ctx, func() { _ = sub.Drain() })
+
+	return nil
 }
 
 func (p *Consumer) startRequestReply(ctx context.Context, route *router.Route, handler HandlerFunc) error {
-	_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
+	sub, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 		p.handleRequestReplyMessage(ctx, route, handler, msg)
 	})
-	return err
+	if err != nil {
+		return err
+	}
+
+	p.drainOnCancel(ctx, func() { _ = sub.Drain() })
+
+	return nil
 }
 
 func (p *Consumer) handleRequestReplyMessage(
@@ -138,11 +157,16 @@ func (p *Consumer) startJetStream(ctx context.Context, route *router.Route, hand
 		return err
 	}
 
-	_, err = cons.Consume(func(msg jetstream.Msg) {
+	consumeCtx, err := cons.Consume(func(msg jetstream.Msg) {
 		p.handleJetStreamMessage(ctx, route, handler, msg)
 	})
+	if err != nil {
+		return err
+	}
 
-	return err
+	p.drainOnCancel(ctx, func() { consumeCtx.Stop() })
+
+	return nil
 }
 
 func (p *Consumer) handleJetStreamMessage(
@@ -208,4 +232,11 @@ func (p *Consumer) publishToDLQ(
 	if ackErr := msg.Ack(); ackErr != nil {
 		p.logger.Error("ack error after dlq", "subject", route.Subject(), "error", ackErr)
 	}
+}
+
+func (p *Consumer) drainOnCancel(ctx context.Context, fn func()) {
+	go func() {
+		<-ctx.Done()
+		fn()
+	}()
 }
