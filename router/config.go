@@ -21,6 +21,5 @@ type config struct {
 	maxDeliver     int
 	handlerTimeout time.Duration
 	deliveryPolicy DeliverPolicy
-	fifo           bool
 	enableDLQ      bool
 }

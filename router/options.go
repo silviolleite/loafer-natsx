@@ -61,9 +61,9 @@ func WithEnableDLQ(enable bool) Option {
 	}
 }
 
-// WithFifo sets the FIFO (First-In-First-Out) mode in the config based on the provided enable flag.
-func WithFifo(enable bool) Option {
+// WithDeliveryPolicy sets the message delivery policy for a JetStream consumer and returns an Option to apply this change.
+func WithDeliveryPolicy(policy DeliverPolicy) Option {
 	return func(c *config) {
-		c.fifo = enable
+		c.deliveryPolicy = policy
 	}
 }
