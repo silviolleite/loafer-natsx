@@ -87,12 +87,12 @@ func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 	}
 
 	switch routeType {
-	case RouteTypeQueue:
+	case TypeQueue:
 		if cfg.queueGroup == "" {
 			return nil, loafernastx.ErrMissingQueueGroup
 		}
 
-	case RouteTypeJetStream:
+	case TypeJetStream:
 		if cfg.stream == "" {
 			return nil, loafernastx.ErrMissingStream
 		}
@@ -106,10 +106,10 @@ func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 			cfg.ackWait = defaultAckWait
 		}
 
-	case RouteTypeRequestReply:
+	case TypeRequestReply:
 		// nothing required beyond subject
 
-	case RouteTypePubSub:
+	case TypePubSub:
 		// nothing required beyond subject
 
 	default:

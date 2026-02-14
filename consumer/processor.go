@@ -37,16 +37,16 @@ func New(nc *nats.Conn, log logger.Logger) (*Consumer, error) {
 // Start begins consuming messages based on the provided route and handler.
 func (p *Consumer) Start(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	switch route.Type() {
-	case router.RouteTypePubSub:
+	case router.TypePubSub:
 		return p.startPubSub(ctx, route, handler)
 
-	case router.RouteTypeQueue:
+	case router.TypeQueue:
 		return p.startQueue(ctx, route, handler)
 
-	case router.RouteTypeRequestReply:
+	case router.TypeRequestReply:
 		return p.startRequestReply(ctx, route, handler)
 
-	case router.RouteTypeJetStream:
+	case router.TypeJetStream:
 		return p.startJetStream(ctx, route, handler)
 	}
 

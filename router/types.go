@@ -5,17 +5,17 @@ type Type int
 
 const (
 
-	// RouteTypePubSub represents a router type for handling standard publish-subscribe messaging.
-	RouteTypePubSub Type = iota
+	// TypePubSub represents a router type for handling standard publish-subscribe messaging.
+	TypePubSub Type = iota
 
-	// RouteTypeQueue represents a router type for processing messages in a work queue model with load balancing.
-	RouteTypeQueue
+	// TypeQueue represents a router type for processing messages in a work queue model with load balancing.
+	TypeQueue
 
-	// RouteTypeRequestReply represents a router type for handling messaging in a request-reply pattern.
-	RouteTypeRequestReply
+	// TypeRequestReply represents a router type for handling messaging in a request-reply pattern.
+	TypeRequestReply
 
-	// RouteTypeJetStream represents a router type for handling messaging using NATS JetStream.
-	RouteTypeJetStream
+	// TypeJetStream represents a router type for handling messaging using NATS JetStream.
+	TypeJetStream
 )
 
 // DeliverPolicy defines the delivery behavior for consuming messages from a stream.
