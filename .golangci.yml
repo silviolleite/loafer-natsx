@@ -158,7 +158,7 @@ linters:
     paths:
       - third_party$
       - builtin$
-      - example
+      - examples
 formatters:
   enable:
     - gofmt
@@ -175,4 +175,4 @@ formatters:
     paths:
       - third_party$
       - builtin$
-      - example
+      - examples
