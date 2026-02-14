@@ -8,7 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 	"github.com/silviolleite/loafer-natsx/logger"
 )
 
@@ -31,7 +31,7 @@ func New(js jetstream.JetStream, subject string, opts ...Option) (*Producer, err
 	}
 
 	if subject == "" {
-		return nil, loafernastx.ErrMissingSubject
+		return nil, loafernatsx.ErrMissingSubject
 	}
 
 	cfg := config{
@@ -51,7 +51,7 @@ func New(js jetstream.JetStream, subject string, opts ...Option) (*Producer, err
 
 func validateStream(js jetstream.JetStream, stream string) error {
 	if stream == "" {
-		return loafernastx.ErrMissingStream
+		return loafernatsx.ErrMissingStream
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), defaultJSValidateTimeout)

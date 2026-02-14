@@ -3,7 +3,7 @@ package router
 import (
 	"time"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 )
 
 const (
@@ -83,21 +83,21 @@ func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 	}
 
 	if cfg.subject == "" {
-		return nil, loafernastx.ErrMissingSubject
+		return nil, loafernatsx.ErrMissingSubject
 	}
 
 	switch routeType {
 	case TypeQueue:
 		if cfg.queueGroup == "" {
-			return nil, loafernastx.ErrMissingQueueGroup
+			return nil, loafernatsx.ErrMissingQueueGroup
 		}
 
 	case TypeJetStream:
 		if cfg.stream == "" {
-			return nil, loafernastx.ErrMissingStream
+			return nil, loafernatsx.ErrMissingStream
 		}
 		if cfg.durable == "" {
-			return nil, loafernastx.ErrMissingDurable
+			return nil, loafernatsx.ErrMissingDurable
 		}
 		if cfg.maxDeliver == 0 {
 			cfg.maxDeliver = defaultMaxDeliveries
@@ -113,7 +113,7 @@ func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 		// nothing required beyond subject
 
 	default:
-		return nil, loafernastx.ErrUnsupportedType
+		return nil, loafernatsx.ErrUnsupportedType
 	}
 
 	return &Route{

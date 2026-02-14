@@ -5,7 +5,7 @@ import (
 
 	"github.com/nats-io/nats.go/jetstream"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 )
 
 const (
@@ -15,7 +15,7 @@ const (
 // Ensure validates and creates or updates a JetStream stream with the given name and configuration options.
 func Ensure(ctx context.Context, js jetstream.JetStream, name string, opts ...Option) error {
 	if name == "" {
-		return loafernastx.ErrMissingName
+		return loafernatsx.ErrMissingName
 	}
 
 	cfg := config{
@@ -30,7 +30,7 @@ func Ensure(ctx context.Context, js jetstream.JetStream, name string, opts ...Op
 	}
 
 	if len(cfg.subjects) == 0 {
-		return loafernastx.ErrMissingSubjects
+		return loafernatsx.ErrMissingSubjects
 	}
 
 	_, err := js.CreateOrUpdateStream(ctx, jetstream.StreamConfig{

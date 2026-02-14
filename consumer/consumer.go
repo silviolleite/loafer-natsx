@@ -9,7 +9,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/logger"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 	"github.com/silviolleite/loafer-natsx/router"
 )
 
@@ -50,7 +50,7 @@ func (p *Consumer) Start(ctx context.Context, route *router.Route, handler Handl
 		return p.startJetStream(ctx, route, handler)
 	}
 
-	return loafernastx.ErrUnsupportedType
+	return loafernatsx.ErrUnsupportedType
 }
 
 func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler HandlerFunc) error {

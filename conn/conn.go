@@ -7,7 +7,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 // Connect establishes a connection to a NATS server and returns a *nats.Conn.
 func Connect(url string, opts ...Option) (*nats.Conn, error) {
 	if url == "" {
-		return nil, loafernastx.ErrMissingURL
+		return nil, loafernatsx.ErrMissingURL
 	}
 
 	cfg := config{

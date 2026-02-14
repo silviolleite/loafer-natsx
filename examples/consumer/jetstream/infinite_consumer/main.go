@@ -85,4 +85,3 @@ func main() {
 
 	slog.Info("shutting down consumer...")
 }
-

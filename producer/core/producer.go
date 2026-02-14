@@ -5,7 +5,7 @@ import (
 
 	"github.com/nats-io/nats.go"
 
-	loafernastx "github.com/silviolleite/loafer-natsx"
+	loafernatsx "github.com/silviolleite/loafer-natsx"
 	"github.com/silviolleite/loafer-natsx/logger"
 )
 
@@ -18,7 +18,7 @@ type Producer struct {
 // New creates a Core Producer using Core NATS.
 func New(nc *nats.Conn, subject string, opts ...Option) (*Producer, error) {
 	if subject == "" {
-		return nil, loafernastx.ErrMissingSubject
+		return nil, loafernatsx.ErrMissingSubject
 	}
 
 	cfg := config{

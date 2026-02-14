@@ -90,4 +90,3 @@ func main() {
 	// [consumer-2] processed: {"order_id": "8"}
 	// all messages processed, exiting
 }
-
