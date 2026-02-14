@@ -1,4 +1,4 @@
-package loafernastx
+package loafernatsx
 
 const (
 	// ErrUnsupportedType indicates an error when an unsupported router type is encountered.
@@ -27,6 +27,18 @@ const (
 
 	// ErrNilJetStream indicates that a JetStream instance is required but was not provided.
 	ErrNilJetStream = Err("jetstream instance is required")
+
+	// ErrNilRoute indicates that the provided route instance is nil, which is invalid for route registration.
+	ErrNilRoute = Err("route cannot be nil")
+
+	// ErrNilHandler indicates that the provided handler instance is nil, which is invalid for route registration.
+	ErrNilHandler = Err("handler cannot be nil")
+
+	// ErrNoRoutes indicates that no routes were provided when attempting to configure or run the broker.
+	ErrNoRoutes = Err("no routes provided")
+
+	// ErrNilRouteRegistration indicates that a route registration provided to the broker is nil, which is not allowed.
+	ErrNilRouteRegistration = Err("route registration cannot be nil")
 )
 
 // Err represents an error as a string type and implements the error interface.
