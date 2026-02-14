@@ -1,8 +1,8 @@
 package loafernastx
 
 const (
-	// ErrUnsupportedType indicates an error when an unsupported consumer type is encountered.
-	ErrUnsupportedType = Err("unsupported consumer type")
+	// ErrUnsupportedType indicates an error when an unsupported router type is encountered.
+	ErrUnsupportedType = Err("unsupported router type")
 
 	// ErrMissingURL indicates that a connect URL is required but was not provided.
 	ErrMissingURL = Err("connect URL is required")
@@ -10,14 +10,14 @@ const (
 	// ErrMissingSubject indicates an error when the required subject is not provided.
 	ErrMissingSubject = Err("subject is required")
 
-	// ErrMissingQueueGroup indicates an error when a queue group is required but not provided for a queue consumer.
-	ErrMissingQueueGroup = Err("queue group is required for queue consumer")
+	// ErrMissingQueueGroup indicates an error when a queue group is required but not provided for a queue router.
+	ErrMissingQueueGroup = Err("queue group is required for queue router")
 
-	// ErrMissingStream indicates an error when a stream is required but not provided for a jetstream consumer.
-	ErrMissingStream = Err("stream is required for jetstream consumer")
+	// ErrMissingStream indicates an error when a stream is required but not provided for a jetstream router.
+	ErrMissingStream = Err("stream is required for jetstream router")
 
-	// ErrMissingDurable indicates an error when a durable name is required but not provided for a jetstream consumer.
-	ErrMissingDurable = Err("durable name is required for jetstream consumer")
+	// ErrMissingDurable indicates an error when a durable name is required but not provided for a jetstream router.
+	ErrMissingDurable = Err("durable name is required for jetstream router")
 
 	// ErrMissingName indicates an error when a stream name is required but not provided.
 	ErrMissingName = Err("stream name is required")

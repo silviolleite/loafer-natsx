@@ -1,4 +1,4 @@
-package consumer
+package router
 
 import (
 	"context"
@@ -7,10 +7,8 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-/*
-ReplyFunc allows customizing the reply payload for RequestReply routes.
-handlerErr is the error returned by the handler (if any).
-*/
+// ReplyFunc allows customizing the reply payload for RequestReply routes.
+// handlerErr is the error returned by the handler (if any).
 type ReplyFunc func(ctx context.Context, result any, handlerErr error) ([]byte, nats.Header, error)
 
 type config struct {

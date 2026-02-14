@@ -1,4 +1,4 @@
-package processor
+package consumer
 
 import (
 	"context"
@@ -7,25 +7,23 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 
+	"github.com/silviolleite/loafer-natsx/logger"
+
 	loafernastx "github.com/silviolleite/loafer-natsx"
-	"github.com/silviolleite/loafer-natsx/consumer"
+	"github.com/silviolleite/loafer-natsx/router"
 )
 
-/*
-Processor handles message consumption using defined routes and handlers.
-*/
-type Processor struct {
+// Consumer handles message consumption using defined routes and handlers.
+type Consumer struct {
 	nc     *nats.Conn
 	js     jetstream.JetStream
-	logger Logger
+	logger logger.Logger
 }
 
-/*
-New creates a new Processor instance.
-*/
-func New(nc *nats.Conn, logger Logger) (*Processor, error) {
-	if logger == nil {
-		logger = nopLogger{}
+// New creates a new Consumer instance.
+func New(nc *nats.Conn, log logger.Logger) (*Consumer, error) {
+	if log == nil {
+		log = logger.NopLogger{}
 	}
 
 	js, err := jetstream.New(nc)
@@ -33,61 +31,58 @@ func New(nc *nats.Conn, logger Logger) (*Processor, error) {
 		return nil, err
 	}
 
-	return &Processor{nc: nc, js: js, logger: logger}, nil
+	return &Consumer{nc: nc, js: js, logger: log}, nil
 }
 
-/*
-Start begins consuming messages based on the provided route and handler.
-*/
 // Start begins consuming messages based on the provided route and handler.
-func (p *Processor) Start(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
+func (p *Consumer) Start(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	switch route.Type() {
-	case consumer.RouteTypePubSub:
+	case router.RouteTypePubSub:
 		return p.startPubSub(ctx, route, handler)
 
-	case consumer.RouteTypeQueue:
+	case router.RouteTypeQueue:
 		return p.startQueue(ctx, route, handler)
 
-	case consumer.RouteTypeRequestReply:
+	case router.RouteTypeRequestReply:
 		return p.startRequestReply(ctx, route, handler)
 
-	case consumer.RouteTypeJetStream:
+	case router.RouteTypeJetStream:
 		return p.startJetStream(ctx, route, handler)
 	}
 
 	return loafernastx.ErrUnsupportedType
 }
 
-func (p *Processor) startPubSub(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
+func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 		_, err := handler(ctx, msg.Data)
 		if err != nil {
-			p.logger.Error("handler error", "subject", msg.Subject, "err", err)
+			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 		}
 	})
 	return err
 }
 
-func (p *Processor) startQueue(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
+func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	_, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
 		_, err := handler(ctx, msg.Data)
 		if err != nil {
-			p.logger.Error("handler error", "subject", msg.Subject, "err", err)
+			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 		}
 	})
 	return err
 }
 
-func (p *Processor) startRequestReply(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
+func (p *Consumer) startRequestReply(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	_, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 		p.handleRequestReplyMessage(ctx, route, handler, msg)
 	})
 	return err
 }
 
-func (p *Processor) handleRequestReplyMessage(
+func (p *Consumer) handleRequestReplyMessage(
 	ctx context.Context,
-	route *consumer.Route,
+	route *router.Route,
 	handler HandlerFunc,
 	msg *nats.Msg,
 ) {
@@ -100,7 +95,7 @@ func (p *Processor) handleRequestReplyMessage(
 
 	data, headers, rErr := route.ReplyFunc()(ctx, result, hErr)
 	if rErr != nil {
-		p.logger.Error("reply builder error", "subject", msg.Subject, "err", rErr)
+		p.logger.Error("reply builder error", "subject", msg.Subject, "error", rErr)
 		return
 	}
 
@@ -113,22 +108,22 @@ func (p *Processor) handleRequestReplyMessage(
 	propagateHeaders(msg, out)
 
 	if err := p.nc.PublishMsg(out); err != nil {
-		p.logger.Error("reply send error", "subject", msg.Subject, "err", err)
+		p.logger.Error("reply send error", "subject", msg.Subject, "error", err)
 	}
 }
 
-func (p *Processor) defaultReply(msg *nats.Msg, err error) {
+func (p *Consumer) defaultReply(msg *nats.Msg, err error) {
 	if err != nil {
-		p.logger.Error("handler error", "subject", msg.Subject, "err", err)
+		p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 		return
 	}
 
-	if err := msg.Respond([]byte("ok")); err != nil {
-		p.logger.Error("reply send error", "subject", msg.Subject, "err", err)
+	if rErr := msg.Respond([]byte("ok")); rErr != nil {
+		p.logger.Error("reply send error", "subject", msg.Subject, "error", rErr)
 	}
 }
 
-func (p *Processor) startJetStream(ctx context.Context, route *consumer.Route, handler HandlerFunc) error {
+func (p *Consumer) startJetStream(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	consumerCfg := jetstream.ConsumerConfig{
 		Durable:       route.Durable(),
 		AckPolicy:     jetstream.AckExplicitPolicy,
@@ -150,9 +145,9 @@ func (p *Processor) startJetStream(ctx context.Context, route *consumer.Route, h
 	return err
 }
 
-func (p *Processor) handleJetStreamMessage(
+func (p *Consumer) handleJetStreamMessage(
 	ctx context.Context,
-	route *consumer.Route,
+	route *router.Route,
 	handler HandlerFunc,
 	msg jetstream.Msg,
 ) {
@@ -165,17 +160,17 @@ func (p *Processor) handleJetStreamMessage(
 	}
 
 	if err := msg.Ack(); err != nil {
-		p.logger.Error("ack error", "subject", route.Subject(), "err", err)
+		p.logger.Error("ack error", "subject", route.Subject(), "error", err)
 	}
 }
 
-func (p *Processor) handleJetStreamError(
-	route *consumer.Route,
+func (p *Consumer) handleJetStreamError(
+	route *router.Route,
 	msg jetstream.Msg,
 	meta *jetstream.MsgMetadata,
 	err error,
 ) {
-	p.logger.Error("handler error", "subject", route.Subject(), "err", err)
+	p.logger.Error("handler error", "subject", route.Subject(), "error", err)
 
 	if route.DLQEnabled() && int(meta.NumDelivered) >= route.MaxDeliver() {
 		p.publishToDLQ(route, msg, meta, err)
@@ -183,33 +178,34 @@ func (p *Processor) handleJetStreamError(
 	}
 
 	if nakErr := msg.Nak(); nakErr != nil {
-		p.logger.Error("nak error", "subject", route.Subject(), "err", nakErr)
+		p.logger.Error("nak error", "subject", route.Subject(), "error", nakErr)
 	}
 }
 
-func (p *Processor) publishToDLQ(
-	route *consumer.Route,
+func (p *Consumer) publishToDLQ(
+	route *router.Route,
 	msg jetstream.Msg,
 	meta *jetstream.MsgMetadata,
 	err error,
 ) {
+	const dlqPRefix = "dlq."
 	headers := nats.Header{}
-	headers.Set("X-Error", err.Error())
-	headers.Set("X-Retry-Count", strconv.Itoa(int(meta.NumDelivered)))
+	headers.Set(HeaderErrorKey, err.Error())
+	headers.Set(HeaderRetryCountKey, strconv.Itoa(int(meta.NumDelivered)))
 
-	dlqSubject := "dlq." + route.Subject()
+	dlqSubject := dlqPRefix + route.Subject()
 
 	if pubErr := p.nc.PublishMsg(&nats.Msg{
 		Subject: dlqSubject,
 		Header:  headers,
 		Data:    msg.Data(),
 	}); pubErr != nil {
-		p.logger.Error("dlq publish error", "subject", dlqSubject, "err", pubErr)
+		p.logger.Error("dlq publish error", "subject", dlqSubject, "error", pubErr)
 		_ = msg.Nak()
 		return
 	}
 
 	if ackErr := msg.Ack(); ackErr != nil {
-		p.logger.Error("ack error after dlq", "subject", route.Subject(), "err", ackErr)
+		p.logger.Error("ack error after dlq", "subject", route.Subject(), "error", ackErr)
 	}
 }

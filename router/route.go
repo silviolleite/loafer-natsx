@@ -1,4 +1,4 @@
-package consumer
+package router
 
 import (
 	"time"
@@ -11,80 +11,58 @@ const (
 	defaultAckWait       = 30 * time.Second
 )
 
-/*
-Route represents a message consumption route definition.
-*/
+// Route represents a message consumption route definition.
 type Route struct {
 	cfg       *config
 	routeType Type
 }
 
-/*
-Type returns the consumer type.
-*/
+// Type returns the router type.
 func (r *Route) Type() Type {
 	return r.routeType
 }
 
-/*
-Subject returns the route subject.
-*/
+// Subject returns the route subject.
 func (r *Route) Subject() string {
 	return r.cfg.subject
 }
 
-/*
-QueueGroup returns the queue group if configured.
-*/
+// QueueGroup returns the queue group if configured.
 func (r *Route) QueueGroup() string {
 	return r.cfg.queueGroup
 }
 
-/*
-Stream returns the JetStream stream name.
-*/
+// Stream returns the JetStream stream name.
 func (r *Route) Stream() string {
 	return r.cfg.stream
 }
 
-/*
-Durable returns the JetStream durable name.
-*/
+// Durable returns the JetStream durable name.
 func (r *Route) Durable() string {
 	return r.cfg.durable
 }
 
-/*
-AckWait returns the JetStream acknowledgment wait duration.
-*/
+// AckWait returns the JetStream acknowledgment wait duration.
 func (r *Route) AckWait() time.Duration {
 	return r.cfg.ackWait
 }
 
-/*
-MaxDeliver returns the JetStream max delivery attempts.
-*/
+// MaxDeliver returns the JetStream max delivery attempts.
 func (r *Route) MaxDeliver() int {
 	return r.cfg.maxDeliver
 }
 
-/*
-DLQEnabled indicates whether DLQ is enabled.
-*/
+// DLQEnabled indicates whether DLQ is enabled.
 func (r *Route) DLQEnabled() bool {
 	return r.cfg.enableDLQ
 }
 
-/*
-ReplyFunc returns the reply function if configured.
-*/
+// ReplyFunc returns the reply function if configured.
 func (r *Route) ReplyFunc() ReplyFunc {
 	return r.cfg.reply
 }
 
-/*
-HandlerTimeout returns the configured handler timeout.
-*/
+// HandlerTimeout returns the configured handler timeout.
 func (r *Route) HandlerTimeout() time.Duration {
 	return r.cfg.handlerTimeout
 }
@@ -94,10 +72,8 @@ func (r *Route) DeliveryPolicy() DeliverPolicy {
 	return r.cfg.deliveryPolicy
 }
 
-/*
-NewRoute creates a validated Route definition applying default values when necessary.
-*/
-func NewRoute(routeType Type, subject string, opts ...Option) (*Route, error) {
+// New creates a validated Route definition applying default values when necessary.
+func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 	cfg := &config{
 		subject: subject,
 	}
