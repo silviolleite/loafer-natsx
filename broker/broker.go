@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/nats-io/nats.go"
+
 	loafernatsx "github.com/silviolleite/loafer-natsx"
 
 	"github.com/silviolleite/loafer-natsx/consumer"
