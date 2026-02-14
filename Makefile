@@ -5,6 +5,7 @@ SHELL := /bin/bash
 GO              ?= go
 GOIMPORTS        = goimports
 GOLANGCI_LINT    = golangci-lint
+GOFIELDALIGNMENT = fieldalignment
 GOLANGCI_VERSION = v2.8.0
 GOPATH_BIN       = $(shell $(GO) env GOPATH)/bin
 LOCAL_PREFIX     = github.com/silviolleite/loafer-natsx
@@ -14,7 +15,7 @@ COVER_OUT        = cover.out
 TEST_COVER_TMP   = tmp.out
 TEST_COVER_OUT   = geral.out
 
-.PHONY: help clean format lint configure install-golang-ci install-goimports cover cover-html test update-dependencies
+.PHONY: help clean format lint configure install-golang-ci install-goimports install-fieldalignment cover cover-html test update-dependencies
 
 help:
 	@echo "Targets:"
@@ -32,6 +33,7 @@ clean:
 
 format:
 	@$(GOIMPORTS) -local $(LOCAL_PREFIX) -w -l .
+	@$(GOFIELDALIGNMENT) -fix ./...
 
 lint: format
 	@$(GOLANGCI_LINT) run --allow-parallel-runners ./... --max-same-issues 0
@@ -46,7 +48,12 @@ install-goimports:
 	@$(GO) install golang.org/x/tools/cmd/goimports@latest
 	@echo "goimports installed successfully"
 
-configure: install-golang-ci install-goimports
+install-fieldalignment:
+	@echo "Installing fieldalignment"
+	@$(GO) install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
+	@echo "fieldalignment installed successfully"
+
+configure: install-golang-ci install-goimports install-fieldalignment
 
 cover:
 	@$(GO) test -covermode=count -coverprofile=$(COVER_TMP) ./...
