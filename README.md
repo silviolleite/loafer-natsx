@@ -1,5 +1,10 @@
 # loafer-natsx
 
+[![Go
+Version](https://img.shields.io/badge/go-1.26+-blue.svg)](https://golang.org)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/silviolleite/loafer-natsx/actions/workflows/ci.yml/badge.svg)](https://github.com/silviolleite/loafer-natsx/actions)
+
 A structured, production-ready Go library for working with NATS and
 JetStream.
 
@@ -61,7 +66,35 @@ The project is organized into focused packages:
 -   broker → Multi-route concurrent orchestration
 -   logger → Logging abstraction
 
-Each package has a single responsibility and avoids implicit behavior.
+## High-Level Architecture Diagram
+
+                        ┌─────────────────────┐
+                        │     Application     │
+                        └──────────┬──────────┘
+                                   │
+                          ┌────────▼────────┐
+                          │      Broker     │
+                          │  (Orchestrator) │
+                          └────────┬────────┘
+                                   │
+            ┌──────────────────────┼──────────────────────┐
+            │                      │                      │
+     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼──────┐
+     │   Router    │       │   Router      │       │   Router     │
+     │ (Route A)   │       │ (Route B)     │       │ (Route N)    │
+     └──────┬──────┘       └───────┬───────┘       └──────┬──────┘
+            │                      │                      │
+     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼──────┐
+     │  Consumer   │       │   Consumer    │       │   Consumer   │
+     │ (Workers)   │       │  (Workers)    │       │  (Workers)   │
+     └──────┬──────┘       └───────┬───────┘       └──────┬──────┘
+            │                      │                      │
+            └──────────────┬───────┴──────────────┬───────┘
+                           │                      │
+                     ┌─────▼─────┐          ┌─────▼─────┐
+                     │   NATS    │          │ JetStream │
+                     │  (Core)   │          │ Persistence│
+                     └───────────┘          └───────────┘
 
 ------------------------------------------------------------------------
 
@@ -90,6 +123,43 @@ The broker guarantees:
 
 This enables building services that consume multiple subjects safely
 without risking inconsistent runtime states.
+
+------------------------------------------------------------------------
+
+# Dead Letter Queue (DLQ)
+
+When enabled for JetStream routes:
+
+-   Messages exceeding MaxDeliver are published to `dlq.<subject>`
+-   Headers include:
+    -   X-Error
+    -   X-Retry-Count
+
+------------------------------------------------------------------------
+
+# Deduplication
+
+Deduplication occurs during publish when a MsgID is provided.
+
+If another message with the same MsgID is published within the stream's
+duplicate window:
+
+-   The message is not stored again
+-   The server acknowledges the original sequence
+-   ack.Duplicate is set to true
+
+------------------------------------------------------------------------
+
+# Graceful Shutdown
+
+All consumers and brokers respect context.Context.
+
+When the context is canceled:
+
+-   Core subscriptions are drained
+-   JetStream consumers are stopped
+-   Broker cancels all routes
+-   Connections can be gracefully drained
 
 ------------------------------------------------------------------------
 
