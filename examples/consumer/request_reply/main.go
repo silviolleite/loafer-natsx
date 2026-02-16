@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"time"
@@ -10,7 +11,8 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
-	coreprod "github.com/silviolleite/loafer-natsx/producer/core"
+	coreprod "github.com/silviolleite/loafer-natsx/producer"
+	"github.com/silviolleite/loafer-natsx/reply"
 	"github.com/silviolleite/loafer-natsx/router"
 )
 
@@ -42,6 +44,8 @@ func main() {
 	route, err := router.New(
 		router.TypeRequestReply,
 		"orders.process",
+		router.WithReply(reply.JSON),
+		router.WithQueueGroup("orders-processor"),
 	)
 	if err != nil {
 		slog.Error("failed to create route", "error", err)
@@ -56,7 +60,7 @@ func main() {
 		time.Sleep(500 * time.Millisecond)
 
 		response := fmt.Sprintf(`{"status":"processed","original":%s}`, string(data))
-		return []byte(response), nil
+		return json.RawMessage(response), nil
 	})
 	if err != nil {
 		slog.Error("failed to start consumer", "error", err)
@@ -64,7 +68,7 @@ func main() {
 	}
 
 	// Create producer
-	prod, err := coreprod.New(nc, "orders.process")
+	prod, err := coreprod.NewCore(nc, "orders.process")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return
@@ -76,15 +80,15 @@ func main() {
 
 	requestPayload := []byte(`{"order_id":"123"}`)
 
-	reply, err := prod.Request(reqCtx, requestPayload)
+	resp, err := prod.Request(reqCtx, requestPayload)
 	if err != nil {
 		slog.Error("request failed", "error", err)
 		return
 	}
 
-	fmt.Println("received reply:", string(reply))
+	fmt.Println("received reply:", string(resp))
 
 	// output:
 	// received request: {"order_id":"123"}
-	// received reply: ok
+	// received reply: {"status":"processed","original":{"order_id":"123"}}
 }

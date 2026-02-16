@@ -12,7 +12,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
-	jsprod "github.com/silviolleite/loafer-natsx/producer/jetstream"
+	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
 	"github.com/silviolleite/loafer-natsx/stream"
 )
@@ -54,7 +54,7 @@ func main() {
 	}
 
 	// Create JetStream producer
-	prod, err := jsprod.New(js, "orders.dedup")
+	prod, err := jsprod.NewJetStream(js, "orders.dedup")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return

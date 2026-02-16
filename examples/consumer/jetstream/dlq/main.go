@@ -12,7 +12,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
-	jsprod "github.com/silviolleite/loafer-natsx/producer/jetstream"
+	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
 	"github.com/silviolleite/loafer-natsx/stream"
 )
@@ -86,7 +86,7 @@ func main() {
 	})
 
 	// Create JetStream producer
-	prod, _ := jsprod.New(js, "orders.failed")
+	prod, _ := jsprod.NewJetStream(js, "orders.failed")
 
 	// Publish a single message
 	_ = prod.Publish(ctx, []byte(`{"order_id":"999"}`))

@@ -1,6 +1,7 @@
 package reply
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 
@@ -50,7 +51,7 @@ type CodedError interface {
 /*
 JSON builds a JSON reply inferring status and error code automatically.
 */
-func JSON(result any, handlerErr error) ([]byte, nats.Header, error) {
+func JSON(ctx context.Context, result any, handlerErr error) ([]byte, nats.Header, error) {
 	h := nats.Header{}
 	h.Set(HeaderContentType, "application/json")
 
@@ -77,7 +78,7 @@ func JSON(result any, handlerErr error) ([]byte, nats.Header, error) {
 /*
 WithStatus builds a JSON reply with an explicit semantic status.
 */
-func WithStatus(result any, status Status) ([]byte, nats.Header, error) {
+func WithStatus(ctx context.Context, result any, status Status) ([]byte, nats.Header, error) {
 	b, err := json.Marshal(result)
 	if err != nil {
 		return nil, nil, err
@@ -90,9 +91,9 @@ func WithStatus(result any, status Status) ([]byte, nats.Header, error) {
 }
 
 /*
-Error builds a plain text error reply.
+WithError builds a plain text error reply.
 */
-func Error(err error) ([]byte, nats.Header) {
+func WithError(err error) ([]byte, nats.Header) {
 	h := nats.Header{}
 	h.Set(HeaderStatus, string(StatusError))
 	h.Set(HeaderContentType, "text/plain")

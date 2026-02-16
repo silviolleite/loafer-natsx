@@ -11,7 +11,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
-	coreprod "github.com/silviolleite/loafer-natsx/producer/core"
+	coreprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
 )
 
@@ -60,7 +60,7 @@ func main() {
 	_ = cons2.Start(ctx, route, handler("consumer-2"))
 
 	// Create producer
-	prod, err := coreprod.New(nc, "orders.queue")
+	prod, err := coreprod.NewCore(nc, "orders.queue")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return

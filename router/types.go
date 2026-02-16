@@ -12,6 +12,7 @@ const (
 	TypeQueue
 
 	// TypeRequestReply represents a router type for handling messaging in a request-reply pattern.
+	// It works similarly to TypeQueue, but the reply subject is used to send the response message.
 	TypeRequestReply
 
 	// TypeJetStream represents a router type for handling messaging using NATS JetStream.

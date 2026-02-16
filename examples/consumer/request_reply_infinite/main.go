@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
+	"github.com/silviolleite/loafer-natsx/reply"
 	"github.com/silviolleite/loafer-natsx/router"
 )
 
@@ -30,7 +33,7 @@ func main() {
 	// Connect to NATS
 	nc, err := conn.Connect(
 		nats.DefaultURL,
-		conn.WithName("orders-consumer"),
+		conn.WithName("orders-reply-consumer"),
 		conn.WithReconnectWait(2*time.Second),
 		conn.WithMaxReconnects(-1),
 	)
@@ -47,32 +50,28 @@ func main() {
 		return
 	}
 
-	// Create durable JetStream route
+	// Create request reply route
 	route, err := router.New(
-		router.TypeJetStream,
-		"orders.new",
-		router.WithStream("ORDERS"),
-		router.WithDurable("orders-consumer-durable"),
-		router.WithDeliveryPolicy(router.DeliverNewPolicy),
-		router.WithAckWait(30*time.Second),
-		router.WithMaxDeliver(5),
+		router.TypeRequestReply,
+		"orders.calculate",
+		router.WithReply(reply.JSON),
+		router.WithQueueGroup("orders-processor"),
 	)
 	if err != nil {
 		slog.Error("failed to create route", "error", err)
 		return
 	}
 
-	slog.Info("jetstream consumer started and listening...")
+	slog.Info("request reply consumer started and listening...")
 
 	err = cons.Start(ctx, route, func(ctx context.Context, data []byte) (any, error) {
-		slog.Info("message received",
-			"payload", string(data),
-		)
+		slog.Info("received", "request", string(data))
 
 		// Simulate processing
-		time.Sleep(200 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 
-		return nil, nil
+		response := json.RawMessage(fmt.Sprintf(`{"status":"processed","original":%s}`, string(data)))
+		return response, nil
 	})
 
 	if err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/nats-io/nats.go/jetstream"
 
 	"github.com/silviolleite/loafer-natsx/conn"
-	producer "github.com/silviolleite/loafer-natsx/producer/jetstream"
+	"github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/stream"
 )
 
@@ -57,7 +57,7 @@ func main() {
 	}
 
 	// Create producers for both subjects
-	createdProducer, err := producer.New(
+	createdProducer, err := producer.NewJetStream(
 		js,
 		"orders.created",
 		producer.WithLogger(logger),
@@ -67,7 +67,7 @@ func main() {
 		return
 	}
 
-	cancelledProducer, err := producer.New(
+	cancelledProducer, err := producer.NewJetStream(
 		js,
 		"orders.cancelled",
 		producer.WithLogger(logger),

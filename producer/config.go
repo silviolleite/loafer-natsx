@@ -1,4 +1,4 @@
-package jetstream
+package producer
 
 import "github.com/silviolleite/loafer-natsx/logger"
 

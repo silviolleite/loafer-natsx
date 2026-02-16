@@ -4,14 +4,14 @@ const (
 	// ErrUnsupportedType indicates an error when an unsupported router type is encountered.
 	ErrUnsupportedType = Err("unsupported router type")
 
-	// ErrMissingURL indicates that a connect URL is required but was not provided.
-	ErrMissingURL = Err("connect URL is required")
+	// ErrMissingURL indicates that a connection URL is required but was not provided.
+	ErrMissingURL = Err("connection URL is required")
 
 	// ErrMissingSubject indicates an error when the required subject is not provided.
 	ErrMissingSubject = Err("subject is required")
 
-	// ErrMissingQueueGroup indicates an error when a queue group is required but not provided for a queue router.
-	ErrMissingQueueGroup = Err("queue group is required for queue router")
+	// ErrMissingQueueGroup indicates an error when a queue group is required but not provided for the router.
+	ErrMissingQueueGroup = Err("queue group is required for the router")
 
 	// ErrMissingStream indicates an error when a stream is required but not provided for a jetstream router.
 	ErrMissingStream = Err("stream is required for jetstream router")
@@ -25,9 +25,6 @@ const (
 	// ErrMissingSubjects indicates that at least one subject must be specified.
 	ErrMissingSubjects = Err("at least one subject is required")
 
-	// ErrNilJetStream indicates that a JetStream instance is required but was not provided.
-	ErrNilJetStream = Err("jetstream instance is required")
-
 	// ErrNilRoute indicates that the provided route instance is nil, which is invalid for route registration.
 	ErrNilRoute = Err("route cannot be nil")
 
@@ -39,6 +36,9 @@ const (
 
 	// ErrNilRouteRegistration indicates that a route registration provided to the broker is nil, which is not allowed.
 	ErrNilRouteRegistration = Err("route registration cannot be nil")
+
+	// ErrRequestNotSupported indicates that request-reply routes are not supported for JetStream producers.
+	ErrRequestNotSupported = Err("request-reply routes are not supported for JetStream producers")
 )
 
 // Err represents an error as a string type and implements the error interface.

@@ -107,7 +107,9 @@ func New(routeType Type, subject string, opts ...Option) (*Route, error) {
 		}
 
 	case TypeRequestReply:
-		// nothing required beyond subject
+		if cfg.queueGroup == "" {
+			return nil, loafernatsx.ErrMissingQueueGroup
+		}
 
 	case TypePubSub:
 		// nothing required beyond subject

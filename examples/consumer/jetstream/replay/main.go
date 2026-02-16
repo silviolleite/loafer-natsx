@@ -12,7 +12,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/consumer"
-	jsprod "github.com/silviolleite/loafer-natsx/producer/jetstream"
+	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
 	"github.com/silviolleite/loafer-natsx/stream"
 )
@@ -50,7 +50,7 @@ func main() {
 	}
 
 	// Create producer
-	prod, _ := jsprod.New(js, "orders.replay")
+	prod, _ := jsprod.NewJetStream(js, "orders.replay")
 
 	// Publish messages BEFORE consumer starts
 	for i := 1; i <= 5; i++ {

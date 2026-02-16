@@ -87,7 +87,7 @@ func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler 
 }
 
 func (p *Consumer) startRequestReply(ctx context.Context, route *router.Route, handler HandlerFunc) error {
-	sub, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
+	sub, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
 		p.handleRequestReplyMessage(ctx, route, handler, msg)
 	})
 	if err != nil {
