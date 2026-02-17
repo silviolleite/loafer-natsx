@@ -24,7 +24,8 @@ resource "jetstream_stream" "orders" {
     "orders.cancelled",
     "orders.failed",
     "orders.replay",
-    "orders.dedup"
+    "orders.dedup",
+    "orders.new"
   ]
 
   retention        = "limits"

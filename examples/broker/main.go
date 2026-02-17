@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
+
 	"github.com/silviolleite/loafer-natsx/broker"
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/router"

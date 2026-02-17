@@ -12,7 +12,6 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/producer"
-	"github.com/silviolleite/loafer-natsx/stream"
 )
 
 func main() {
@@ -38,20 +37,6 @@ func main() {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.Error("failed to create jetstream", "error", err)
-		return
-	}
-
-	err = stream.Ensure(
-		ctx, js, "ORDERS",
-		stream.WithSubjects("orders.new"),
-		stream.WithRetention(jetstream.LimitsPolicy),
-		stream.WithMaxAge(7*24*time.Hour),
-		// Set a custom deduplication window of 1 minute
-		// Default is 2 minutes
-		// stream.WithDuplicateWindow(1 * time.Minute),
-	)
-	if err != nil {
-		slog.Error("failed to ensure stream", "error", err)
 		return
 	}
 
