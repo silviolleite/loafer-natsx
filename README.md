@@ -5,7 +5,7 @@ Version](https://img.shields.io/badge/go-1.26+-blue.svg)](https://golang.org)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/silviolleite/loafer-natsx/actions/workflows/ci.yml/badge.svg)](https://github.com/silviolleite/loafer-natsx/actions)
 
-A structured, production-ready Go library for working with NATS and
+A structured, Go library for working with NATS and
 JetStream.
 
 `loafer-natsx` provides a clean abstraction layer for:
@@ -59,7 +59,6 @@ Requirements:
 The project is organized into focused packages:
 
 -   conn → Connection management
--   stream → JetStream stream provisioning
 -   producer → Core and JetStream producers
 -   router → Route definitions
 -   consumer → Message consumption engine
