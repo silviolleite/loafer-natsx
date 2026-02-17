@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  nats:
+    image: nats:latest
+    container_name: nats-server
+    command: >
+      -js
+      -m 8222
+      -DV
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    healthcheck:
+      test: [ "CMD", "nats-server", "-sl" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  terraform:
+    image: hashicorp/terraform:1.6
+    container_name: nats-terraform
+    working_dir: /iac
+    volumes:
+      - ./iac:/iac
+    depends_on:
+      nats:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+        terraform init &&
+        terraform apply -auto-approve
+      "

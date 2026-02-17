@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -14,7 +13,6 @@ import (
 	"github.com/silviolleite/loafer-natsx/consumer"
 	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
-	"github.com/silviolleite/loafer-natsx/stream"
 )
 
 func main() {
@@ -41,19 +39,6 @@ func main() {
 		return
 	}
 
-	// Ensure stream exists
-	err = stream.Ensure(
-		ctx,
-		js,
-		"ORDERS",
-		stream.WithSubjects("orders.created"),
-		stream.WithMaxAge(24*time.Hour),
-	)
-	if err != nil {
-		slog.Error("failed to ensure stream", "error", err)
-		return
-	}
-
 	// Create consumer engine
 	cons, err := consumer.New(nc, logger)
 	if err != nil {
@@ -67,6 +52,7 @@ func main() {
 		"orders.created",
 		router.WithStream("ORDERS"),
 		router.WithDurable("orders-durable"),
+		router.WithDeliveryPolicy(router.DeliverNewPolicy),
 	)
 	if err != nil {
 		slog.Error("failed to create route", "error", err)

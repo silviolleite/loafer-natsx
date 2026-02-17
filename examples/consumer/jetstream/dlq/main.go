@@ -14,7 +14,6 @@ import (
 	"github.com/silviolleite/loafer-natsx/consumer"
 	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
-	"github.com/silviolleite/loafer-natsx/stream"
 )
 
 func main() {
@@ -36,19 +35,6 @@ func main() {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.Error("failed to create jetstream", "error", err)
-		return
-	}
-
-	// Ensure stream
-	err = stream.Ensure(
-		ctx,
-		js,
-		"ORDERS",
-		stream.WithSubjects("orders.failed"),
-		stream.WithMaxAge(24*time.Hour),
-	)
-	if err != nil {
-		slog.Error("failed to ensure stream", "error", err)
 		return
 	}
 

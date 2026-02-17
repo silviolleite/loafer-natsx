@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
-	"time"
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
@@ -14,7 +13,6 @@ import (
 	"github.com/silviolleite/loafer-natsx/consumer"
 	jsprod "github.com/silviolleite/loafer-natsx/producer"
 	"github.com/silviolleite/loafer-natsx/router"
-	"github.com/silviolleite/loafer-natsx/stream"
 )
 
 func main() {
@@ -37,19 +35,6 @@ func main() {
 	js, err := jetstream.New(nc)
 	if err != nil {
 		slog.Error("failed to create jetstream", "error", err)
-		return
-	}
-
-	// Ensure stream with an explicit DuplicateWindow
-	err = stream.Ensure(
-		ctx,
-		js,
-		"ORDERS",
-		stream.WithSubjects("orders.dedup"),
-		stream.WithDuplicateWindow(1*time.Minute),
-	)
-	if err != nil {
-		slog.Error("failed to ensure stream", "error", err)
 		return
 	}
 

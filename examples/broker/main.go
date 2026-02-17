@@ -9,12 +9,9 @@ import (
 	"time"
 
 	"github.com/nats-io/nats.go"
-	"github.com/nats-io/nats.go/jetstream"
-
 	"github.com/silviolleite/loafer-natsx/broker"
 	"github.com/silviolleite/loafer-natsx/conn"
 	"github.com/silviolleite/loafer-natsx/router"
-	"github.com/silviolleite/loafer-natsx/stream"
 )
 
 func main() {
@@ -40,27 +37,7 @@ func main() {
 	}
 	defer nc.Drain()
 
-	js, err := jetstream.New(nc)
-	if err != nil {
-		slog.Error("failed to create jetstream", "error", err)
-		return
-	}
-
-	// Ensure stream
-	err = stream.Ensure(
-		ctx,
-		js,
-		"ORDERS",
-		stream.WithSubjects("orders.created", "orders.cancelled"),
-		stream.WithMaxAge(24*time.Hour),
-	)
-	if err != nil {
-		slog.Error("failed to ensure stream", "error", err)
-		return
-	}
-
 	// Create routes
-
 	createdRoute, err := router.New(
 		router.TypeJetStream,
 		"orders.created",
