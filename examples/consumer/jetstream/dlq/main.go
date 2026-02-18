@@ -48,7 +48,7 @@ func main() {
 		router.WithDurable("orders-dlq-durable"),
 		router.WithMaxDeliver(3),
 		router.WithAckWait(2*time.Second),
-		router.WithEnableDLQ(true),
+		router.WithEnableDLQ(),
 	)
 	if err != nil {
 		slog.Error("failed to create route", "error", err)

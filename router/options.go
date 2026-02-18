@@ -54,10 +54,10 @@ func WithReply(r ReplyFunc) Option {
 	}
 }
 
-// WithEnableDLQ specifies whether the Dead Letter Queue (DLQ) is enabled for the configuration.
-func WithEnableDLQ(enable bool) Option {
+// WithEnableDLQ enables the Dead Letter Queue (DLQ) for the router by setting the enableDLQ configuration to true.
+func WithEnableDLQ() Option {
 	return func(c *config) {
-		c.enableDLQ = enable
+		c.enableDLQ = true
 	}
 }
 
