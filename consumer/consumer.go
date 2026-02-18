@@ -177,7 +177,6 @@ func (p *Consumer) handleJetStreamMessage(
 ) {
 	meta, _ := msg.Metadata()
 	_, hErr := handler(ctx, msg.Data())
-
 	if hErr != nil {
 		p.handleJetStreamError(route, msg, meta, hErr)
 		return
