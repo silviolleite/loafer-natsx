@@ -19,12 +19,6 @@ const (
 	// ErrMissingDurable indicates an error when a durable name is required but not provided for a jetstream router.
 	ErrMissingDurable = Err("durable name is required for jetstream router")
 
-	// ErrMissingName indicates an error when a stream name is required but not provided.
-	ErrMissingName = Err("stream name is required")
-
-	// ErrMissingSubjects indicates that at least one subject must be specified.
-	ErrMissingSubjects = Err("at least one subject is required")
-
 	// ErrNilRoute indicates that the provided route instance is nil, which is invalid for route registration.
 	ErrNilRoute = Err("route cannot be nil")
 
