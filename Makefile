@@ -66,7 +66,7 @@ cover-html: cover
 
 test: clean
 	@$(GO) test -timeout 1m -race -covermode=atomic -coverprofile=$(TEST_COVER_TMP) ./...
-	@grep -Ev 'scripts|cmd|fake|documents' $(TEST_COVER_TMP) > $(TEST_COVER_OUT)
+	@grep -Ev 'examples' $(TEST_COVER_TMP) > $(TEST_COVER_OUT)
 	@$(GO) tool cover -func=$(TEST_COVER_OUT)
 
 update-dependencies:
