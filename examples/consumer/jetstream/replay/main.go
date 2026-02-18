@@ -35,7 +35,8 @@ func main() {
 	}
 
 	// Create producer
-	prod, _ := jsprod.NewJetStream(js, "orders.replay")
+	strategy := jsprod.NewJetStreamStrategy(js, logger)
+	prod, _ := jsprod.New(strategy, "orders.replay")
 
 	// Publish messages BEFORE consumer starts
 	for i := 1; i <= 5; i++ {

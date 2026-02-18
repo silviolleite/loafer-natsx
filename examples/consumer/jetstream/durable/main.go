@@ -74,7 +74,8 @@ func main() {
 	}
 
 	// Create JetStream producer
-	prod, err := jsprod.NewJetStream(js, "orders.created")
+	strategy := jsprod.NewJetStreamStrategy(js, logger)
+	prod, err := jsprod.New(strategy, "orders.created")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return

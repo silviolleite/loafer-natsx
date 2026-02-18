@@ -60,7 +60,8 @@ func main() {
 	_ = cons2.Start(ctx, route, handler("consumer-2"))
 
 	// Create producer
-	prod, err := coreprod.NewCore(nc, "orders.queue")
+	strategy := coreprod.NewCoreStrategy(nc)
+	prod, err := coreprod.New(strategy, "orders.queue")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return

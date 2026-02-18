@@ -33,8 +33,9 @@ func main() {
 	defer nc.Close()
 
 	// Create Core Producer
-	prod, err := producer.NewCore(
-		nc, "orders.new",
+	strategy := producer.NewCoreStrategy(nc)
+	prod, err := producer.New(
+		strategy, "orders.new",
 		producer.WithLogger(logger),
 	)
 	if err != nil {

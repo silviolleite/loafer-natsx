@@ -42,8 +42,9 @@ func main() {
 	}
 
 	// Create producers for both subjects
-	createdProducer, err := producer.NewJetStream(
-		js,
+	strategy := producer.NewJetStreamStrategy(js, logger)
+	createdProducer, err := producer.New(
+		strategy,
 		"orders.created",
 		producer.WithLogger(logger),
 	)
@@ -52,8 +53,8 @@ func main() {
 		return
 	}
 
-	cancelledProducer, err := producer.NewJetStream(
-		js,
+	cancelledProducer, err := producer.New(
+		strategy,
 		"orders.cancelled",
 		producer.WithLogger(logger),
 	)

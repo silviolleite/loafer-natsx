@@ -33,7 +33,8 @@ func main() {
 	}
 	defer nc.Drain()
 
-	prod, err := producer.NewCore(nc, "orders.calculate")
+	strategy := producer.NewCoreStrategy(nc)
+	prod, err := producer.New(strategy, "orders.calculate")
 	if err != nil {
 		slog.Error("producer error", "error", err)
 		return
@@ -69,7 +70,7 @@ func main() {
 }
 
 func sendRequest(prod *producer.Producer, id int) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Second)
 	defer cancel()
 
 	payload := fmt.Sprintf(`{"order_id":%d}`, id)

@@ -60,7 +60,8 @@ func main() {
 	}
 
 	// Create Core Producer
-	prod, err := coreprod.NewCore(nc, "orders.created")
+	strategy := coreprod.NewCoreStrategy(nc)
+	prod, err := coreprod.New(strategy, "orders.created")
 	if err != nil {
 		slog.Error("failed to create producer", "error", err)
 		return

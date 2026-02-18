@@ -72,7 +72,8 @@ func main() {
 	})
 
 	// Create JetStream producer
-	prod, _ := jsprod.NewJetStream(js, "orders.failed")
+	strategy := jsprod.NewJetStreamStrategy(js, logger)
+	prod, _ := jsprod.New(strategy, "orders.failed")
 
 	// Publish a single message
 	_ = prod.Publish(ctx, []byte(`{"order_id":"999"}`))

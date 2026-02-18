@@ -41,8 +41,9 @@ func main() {
 	}
 
 	// Create producer
-	prod, err := producer.NewJetStream(
-		js, "orders.new",
+	strategy := producer.NewJetStreamStrategy(js, logger)
+	prod, err := producer.New(
+		strategy, "orders.new",
 		producer.WithLogger(logger),
 	)
 	if err != nil {
