@@ -2,6 +2,7 @@ package broker
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/nats-io/nats.go"
@@ -87,7 +88,17 @@ func (b *Broker) runRoute(
 		return err
 	}
 
-	var wg sync.WaitGroup
+	var (
+		wg      sync.WaitGroup
+		errOnce sync.Once
+		errCh   = make(chan error, 1)
+	)
+
+	reportErr := func(e error) {
+		errOnce.Do(func() {
+			errCh <- e
+		})
+	}
 
 	for i := 0; i < b.workers; i++ {
 		wg.Add(1)
@@ -95,18 +106,49 @@ func (b *Broker) runRoute(
 		go func(workerID int) {
 			defer wg.Done()
 
-			sErr := cons.Start(ctx, reg.Route(), reg.Handler())
-			if sErr != nil {
+			defer func() {
+				if r := recover(); r != nil {
+					pErr := fmt.Errorf("worker panic: %v", r)
+
+					b.log.Error(
+						"route worker panic recovered",
+						"subject", reg.Route().Subject(),
+						"worker", workerID,
+						"panic", r,
+					)
+
+					reportErr(pErr)
+				}
+			}()
+
+			if sErr := cons.Start(ctx, reg.Route(), reg.Handler()); sErr != nil {
 				b.log.Error(
 					"route worker failed",
 					"subject", reg.Route().Subject(),
 					"worker", workerID,
 					"error", sErr,
 				)
+
+				reportErr(sErr)
 			}
 		}(i)
 	}
 
-	wg.Wait()
-	return nil
+	done := make(chan struct{})
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case chErr := <-errCh:
+		return chErr
+
+	case <-done:
+		return nil
+
+	case <-ctx.Done():
+		return nil
+	}
 }
