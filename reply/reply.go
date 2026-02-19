@@ -8,9 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-/*
-Status represents a semantic response status sent via headers.
-*/
+// Status represents a semantic response status sent via headers.
 type Status string
 
 const (
@@ -40,17 +38,13 @@ const (
 	HeaderContentType = "Content-Type"
 )
 
-/*
-CodedError represents an error with a semantic code.
-*/
+// CodedError represents an error with a semantic code.
 type CodedError interface {
 	error
 	Code() string
 }
 
-/*
-JSON builds a JSON reply inferring status and error code automatically.
-*/
+// JSON builds a JSON reply inferring status and error code automatically.
 func JSON(ctx context.Context, result any, handlerErr error) ([]byte, nats.Header, error) {
 	h := nats.Header{}
 	h.Set(HeaderContentType, "application/json")
@@ -75,9 +69,7 @@ func JSON(ctx context.Context, result any, handlerErr error) ([]byte, nats.Heade
 	return b, h, nil
 }
 
-/*
-WithStatus builds a JSON reply with an explicit semantic status.
-*/
+// WithStatus builds a JSON reply with an explicit semantic status.
 func WithStatus(ctx context.Context, result any, status Status) ([]byte, nats.Header, error) {
 	b, err := json.Marshal(result)
 	if err != nil {
@@ -90,9 +82,7 @@ func WithStatus(ctx context.Context, result any, status Status) ([]byte, nats.He
 	return b, h, nil
 }
 
-/*
-WithError builds a plain text error reply.
-*/
+// WithError builds a plain text error reply.
 func WithError(err error) ([]byte, nats.Header) {
 	h := nats.Header{}
 	h.Set(HeaderStatus, string(StatusError))
