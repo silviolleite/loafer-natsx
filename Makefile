@@ -65,7 +65,7 @@ cover-html: cover
 	@echo "Generated cover.html"
 
 test: clean
-	@$(GO) test -timeout 1m -race -covermode=atomic -coverprofile=$(TEST_COVER_TMP) ./...
+	@$(GO) test -timeout 1m -race -count=1 -covermode=atomic -coverprofile=$(TEST_COVER_TMP) -coverpkg=./... ./...
 	@grep -Ev 'examples' $(TEST_COVER_TMP) > $(TEST_COVER_OUT)
 	@$(GO) tool cover -func=$(TEST_COVER_OUT)
 
