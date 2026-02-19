@@ -6,6 +6,7 @@ GO              ?= go
 GOIMPORTS        = goimports
 GOLANGCI_LINT    = golangci-lint
 GOFIELDALIGNMENT = fieldalignment
+GOVULNCHECK		 = govulncheck
 GOLANGCI_VERSION = v2.8.0
 GOPATH_BIN       = $(shell $(GO) env GOPATH)/bin
 LOCAL_PREFIX     = github.com/silviolleite/loafer-natsx
@@ -31,6 +32,9 @@ help:
 
 clean:
 	@$(GO) clean -testcache
+
+check-vuln:
+	@$(GOVULNCHECK) ./...
 
 format:
 	@$(GOIMPORTS) -local $(LOCAL_PREFIX) -w -l .
@@ -73,7 +77,7 @@ cover-html: cover
 test-chaos: clean
 	@GOMAXPROCS=1 $(GO) test ./... -race -count=30 -shuffle=on -timeout 15m
 
-test: clean
+test: clean check-vuln
 	@$(GO) test -timeout 1m -race -covermode=atomic -coverprofile=$(TEST_COVER_TMP) -coverpkg=./... ./...
 	@grep -Ev 'examples' $(TEST_COVER_TMP) > $(TEST_COVER_OUT)
 	@$(GO) tool cover -func=$(TEST_COVER_OUT)
