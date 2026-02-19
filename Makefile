@@ -15,16 +15,17 @@ COVER_OUT        = cover.out
 TEST_COVER_TMP   = tmp.out
 TEST_COVER_OUT   = geral.out
 
-.PHONY: help clean format lint configure install-golang-ci install-goimports install-fieldalignment cover cover-html test update-dependencies
+.PHONY: help clean format lint configure install-golang-ci install-goimports install-fieldalignment install-govulncheck cover cover-html test test-chaos update-dependencies
 
 help:
 	@echo "Targets:"
 	@echo "  clean                Clean test cache"
 	@echo "  format               Format code with goimports"
 	@echo "  lint                 Format and run golangci-lint"
-	@echo "  configure            Install tools (golangci-lint and goimports)"
+	@echo "  configure            Install tools"
 	@echo "  cover                Coverage report (cover.out)"
 	@echo "  cover-html           Coverage HTML report (cover.html)"
+	@echo "  test-chaos			  Stress test"
 	@echo "  test                 Tests with race + coverage (geral.out)"
 	@echo "  update-dependencies  Update dependencies and run go mod tidy"
 
@@ -53,7 +54,12 @@ install-fieldalignment:
 	@$(GO) install golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment@latest
 	@echo "fieldalignment installed successfully"
 
-configure: install-golang-ci install-goimports install-fieldalignment
+install-govulncheck:
+	@echo "Installing govulncheck"
+	@$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
+	@echo "govulncheck installed successfully"
+
+configure: install-golang-ci install-goimports install-fieldalignment install-govulncheck
 
 cover:
 	@$(GO) test -covermode=count -coverprofile=$(COVER_TMP) ./...
@@ -64,7 +70,7 @@ cover-html: cover
 	@$(GO) tool cover -html=$(COVER_OUT) -o cover.html
 	@echo "Generated cover.html"
 
-test-chaos:
+test-chaos: clean
 	@GOMAXPROCS=1 $(GO) test ./... -race -count=30 -shuffle=on -timeout 15m
 
 test: clean
