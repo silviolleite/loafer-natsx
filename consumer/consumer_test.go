@@ -261,3 +261,145 @@ func wait(wg *sync.WaitGroup) {
 		panic("timeout")
 	}
 }
+
+func TestPubSub_PanicRecovered(t *testing.T) {
+	s, url := runServer(false)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	r, _ := router.New(router.TypePubSub, "panic.pubsub")
+
+	err := c.Start(ctx, r, func(ctx context.Context, b []byte) (any, error) {
+		panic("boom")
+	})
+
+	assert.NoError(t, err)
+
+	_ = nc.Publish("panic.pubsub", []byte("data"))
+
+	time.Sleep(100 * time.Millisecond)
+}
+
+func TestRequestReply_Default_Error(t *testing.T) {
+	s, url := runServer(false)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	ctx := context.Background()
+
+	r, _ := router.New(
+		router.TypeRequestReply,
+		"test.req.err",
+		router.WithQueueGroup("workers"),
+	)
+
+	err := c.Start(ctx, r, func(ctx context.Context, b []byte) (any, error) {
+		return nil, errors.New("fail")
+	})
+
+	assert.NoError(t, err)
+
+	_, err = nc.Request("test.req.err", []byte("data"), time.Second)
+	assert.Error(t, err)
+}
+
+func TestRequestReply_ReplyBuilderError(t *testing.T) {
+	s, url := runServer(false)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	reply := func(ctx context.Context, result any, err error) ([]byte, nats.Header, error) {
+		return nil, nil, errors.New("builder fail")
+	}
+
+	r, _ := router.New(
+		router.TypeRequestReply,
+		"test.req.builder",
+		router.WithQueueGroup("workers"),
+		router.WithReply(reply),
+	)
+
+	err := c.Start(context.Background(), r,
+		func(ctx context.Context, b []byte) (any, error) {
+			return "ok", nil
+		})
+
+	assert.NoError(t, err)
+
+	_, err = nc.Request("test.req.builder", []byte("data"), time.Second)
+	assert.Error(t, err)
+}
+
+func TestJetStream_NakPath(t *testing.T) {
+	s, url := runServer(true)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	js, _ := jetstream.New(nc)
+
+	_, _ = js.CreateStream(context.Background(), jetstream.StreamConfig{
+		Name:     "TESTNAK",
+		Subjects: []string{"test.nak"},
+	})
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	r, _ := router.New(
+		router.TypeJetStream,
+		"test.nak",
+		router.WithStream("TESTNAK"),
+		router.WithDurable("dnak"),
+	)
+
+	err := c.Start(context.Background(), r,
+		func(ctx context.Context, b []byte) (any, error) {
+			return nil, errors.New("fail")
+		})
+
+	assert.NoError(t, err)
+
+	_, _ = js.Publish(context.Background(), "test.nak", []byte("data"))
+
+	time.Sleep(200 * time.Millisecond)
+}
+
+func TestDrainOnCancel(t *testing.T) {
+	s, url := runServer(false)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	ctx, cancel := context.WithCancel(context.Background())
+
+	r, _ := router.New(router.TypePubSub, "test.drain")
+
+	err := c.Start(ctx, r, func(ctx context.Context, b []byte) (any, error) {
+		return nil, nil
+	})
+
+	assert.NoError(t, err)
+
+	cancel()
+
+	time.Sleep(100 * time.Millisecond)
+}

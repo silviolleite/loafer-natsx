@@ -55,10 +55,12 @@ func (p *Consumer) Start(ctx context.Context, route *router.Route, handler Handl
 
 func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	sub, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
-		_, err := handler(ctx, msg.Data)
-		if err != nil {
-			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
-		}
+		p.safeHandle(ctx, msg.Subject, func() {
+			_, err := handler(ctx, msg.Data)
+			if err != nil {
+				p.logger.Error("handler error", "subject", msg.Subject, "error", err)
+			}
+		})
 	})
 
 	if err != nil {
@@ -72,10 +74,12 @@ func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler
 
 func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	sub, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
-		_, err := handler(ctx, msg.Data)
-		if err != nil {
-			p.logger.Error("handler error", "subject", msg.Subject, "error", err)
-		}
+		p.safeHandle(ctx, msg.Subject, func() {
+			_, err := handler(ctx, msg.Data)
+			if err != nil {
+				p.logger.Error("handler error", "subject", msg.Subject, "error", err)
+			}
+		})
 	})
 	if err != nil {
 		return err
@@ -88,7 +92,9 @@ func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler 
 
 func (p *Consumer) startRequestReply(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	sub, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
-		p.handleRequestReplyMessage(ctx, route, handler, msg)
+		p.safeHandle(ctx, msg.Subject, func() {
+			p.handleRequestReplyMessage(ctx, route, handler, msg)
+		})
 	})
 	if err != nil {
 		return err
@@ -158,7 +164,9 @@ func (p *Consumer) startJetStream(ctx context.Context, route *router.Route, hand
 	}
 
 	consumeCtx, err := cons.Consume(func(msg jetstream.Msg) {
-		p.handleJetStreamMessage(ctx, route, handler, msg)
+		p.safeHandle(ctx, route.Subject(), func() {
+			p.handleJetStreamMessage(ctx, route, handler, msg)
+		})
 	})
 	if err != nil {
 		return err
@@ -238,4 +246,22 @@ func (p *Consumer) drainOnCancel(ctx context.Context, fn func()) {
 		<-ctx.Done()
 		fn()
 	}()
+}
+
+func (p *Consumer) safeHandle(
+	ctx context.Context,
+	subject string,
+	fn func(),
+) {
+	defer func() {
+		if r := recover(); r != nil {
+			p.logger.Error(
+				"handler panic recovered",
+				"subject", subject,
+				"panic", r,
+			)
+		}
+	}()
+
+	fn()
 }
