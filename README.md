@@ -1,9 +1,10 @@
 # loafer-natsx
 
-[![Go
-Version](https://img.shields.io/badge/go-1.26+-blue.svg)](https://golang.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.26+-blue.svg)](https://golang.org)
+[![Go Reference](https://pkg.go.dev/badge/github.com/silviolleite/loafer-natsx.svg)](https://pkg.go.dev/github.com/silviolleite/loafer-natsx)
+[![Latest Release](https://img.shields.io/github/v/release/silviolleite/loafer-natsx)](https://github.com/silviolleite/loafer-natsx/releases/latest)
 [![CI](https://github.com/silviolleite/loafer-natsx/actions/workflows/ci.yml/badge.svg)](https://github.com/silviolleite/loafer-natsx/actions)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 A structured, Go library for working with NATS and
 JetStream.
