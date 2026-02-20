@@ -170,6 +170,81 @@ https://github.com/silviolleite/loafer-natsx/tree/main/examples
 
 ------------------------------------------------------------------------
 
+# Contributing
+
+We welcome contributions! Follow the steps below to set up your development environment.
+
+## Prerequisites
+
+- Go 1.26+
+- Node.js (for commit linting via husky)
+- Docker & Docker Compose (for local NATS server)
+
+## Getting Started
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/silviolleite/loafer-natsx.git
+   cd loafer-natsx
+   ```
+
+2. **Set up the development environment**
+
+   This installs Go tools, Node dependencies, and configures git hooks for commit validation:
+
+   ```bash
+   make setup-dev
+   ```
+
+3. **Run tests**
+
+   ```bash
+   make test
+   ```
+
+4. **Run linter**
+
+   ```bash
+   make lint
+   ```
+
+## Commit Message Convention
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/). All commits must follow this format:
+
+type(scope?): subject
+
+**Examples:**
+
+- `feat: add new consumer option`
+- `fix(router): handle nil pointer on shutdown`
+- `docs: update README`
+- `chore: bump dependencies`
+- `test: add coverage for producer`
+
+The git hook will reject commits that don't follow this convention.
+
+## Available Make Targets
+
+| Target            | Description                                      |
+|-------------------|--------------------------------------------------|
+| `make configure`  | Install all dev tools and git hooks              |
+| `make test`       | Run tests with race detection and coverage       |
+| `make lint`       | Format code and run golangci-lint                |
+| `make cover`      | Generate coverage report                         |
+| `make cover-html` | Generate HTML coverage report                    |
+
+## Pull Request Process
+
+1. Create a feature branch from `main`
+2. Make your changes with properly formatted commit messages
+3. Ensure all tests pass (`make test`)
+4. Ensure linter passes (`make lint`)
+5. Open a Pull Request
+
+------------------------------------------------------------------------
+
 # License
 
 MIT
