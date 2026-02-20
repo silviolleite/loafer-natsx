@@ -1,0 +1,10 @@
+{
+  "release-type": "go",
+  "include-v-in-tag": true,
+  "packages": {
+    ".": {
+      "package-name": "github.com/silviolleite/loafer-natsx",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}

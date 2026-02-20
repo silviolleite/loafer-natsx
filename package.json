@@ -1,0 +1,12 @@
+{
+  "name": "loafer-natsx-dev",
+  "private": true,
+  "scripts": {
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
+    "husky": "^9.0.0"
+  }
+}

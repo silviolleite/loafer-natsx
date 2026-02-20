@@ -16,19 +16,20 @@ COVER_OUT        = cover.out
 TEST_COVER_TMP   = tmp.out
 TEST_COVER_OUT   = geral.out
 
-.PHONY: help clean format lint configure install-golang-ci install-goimports install-fieldalignment install-govulncheck cover cover-html test test-chaos update-dependencies
+.PHONY: help clean format lint configure install-golang-ci install-goimports install-fieldalignment install-govulncheck cover cover-html test test-chaos update-dependencies setup-dev
 
 help:
 	@echo "Targets:"
 	@echo "  clean                Clean test cache"
 	@echo "  format               Format code with goimports"
 	@echo "  lint                 Format and run golangci-lint"
-	@echo "  configure            Install tools"
+	@echo "  configure            Install tools (Go + git hooks)"
 	@echo "  cover                Coverage report (cover.out)"
 	@echo "  cover-html           Coverage HTML report (cover.html)"
-	@echo "  test-chaos			  Stress test"
+	@echo "  test-chaos           Stress test"
 	@echo "  test                 Tests with race + coverage (geral.out)"
 	@echo "  update-dependencies  Update dependencies and run go mod tidy"
+	@echo "  setup-dev            Install npm (if needed) + husky + commitlint"
 
 clean:
 	@$(GO) clean -testcache
@@ -63,7 +64,25 @@ install-govulncheck:
 	@$(GO) install golang.org/x/vuln/cmd/govulncheck@latest
 	@echo "govulncheck installed successfully"
 
-configure: install-golang-ci install-goimports install-fieldalignment install-govulncheck
+setup-dev:
+	@echo "==> Checking npm..."
+	@if ! command -v npm &> /dev/null; then \
+		echo "npm not found. Installing Node.js via nvm..."; \
+		curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash; \
+		export NVM_DIR="$$HOME/.nvm"; \
+		[ -s "$$NVM_DIR/nvm.sh" ] && . "$$NVM_DIR/nvm.sh"; \
+		nvm install --lts; \
+	else \
+		echo "npm found: $$(npm --version)"; \
+	fi
+	@echo "==> Installing dependencies (husky + commitlint)..."
+	@npm install
+	@echo "==> Configuring commit-msg hook..."
+	@echo 'npx --no -- commitlint --edit "$$1"' > .husky/commit-msg
+	@chmod +x .husky/commit-msg
+	@echo "==> Setup complete! Git hooks enabled."
+
+configure: install-golang-ci install-goimports install-fieldalignment install-govulncheck setup-dev
 
 cover:
 	@$(GO) test -covermode=count -coverprofile=$(COVER_TMP) ./...
