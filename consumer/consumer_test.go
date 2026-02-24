@@ -151,6 +151,57 @@ func TestRequestReply_CustomReply(t *testing.T) {
 	assert.Equal(t, []byte("custom"), msg.Data)
 }
 
+func TestRequestReply_PropagateHeaders(t *testing.T) {
+	s, url := runServer(false)
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	c, _ := consumer.New(nc, logger.NopLogger{})
+
+	reply := func(ctx context.Context, result any, err error) ([]byte, nats.Header, error) {
+		return []byte("custom"), nil, nil
+	}
+
+	r, _ := router.New(
+		router.TypeRequestReply,
+		"test.req.headers",
+		router.WithQueueGroup("workers"),
+		router.WithReply(reply),
+	)
+
+	err := c.Start(context.Background(), r, func(ctx context.Context, b []byte) (any, error) {
+		return "result", nil
+	})
+	assert.NoError(t, err)
+
+	req := &nats.Msg{
+		Subject: "test.req.headers",
+		Data:    []byte("data"),
+		Header:  nats.Header{},
+	}
+	req.Header.Add(consumer.HeaderCorrelationIDKey, "cid-1")
+	req.Header.Add(consumer.HeaderCorrelationIDKey, "cid-2")
+	req.Header.Add(consumer.HeaderTraceParentKey, "tp-1")
+	req.Header.Add(consumer.HeaderTraceStateKey, "ts-1")
+	req.Header.Add(consumer.HeaderBaggageKey, "bg-1")
+	req.Header.Add(consumer.HeaderErrorKey, "should-not-propagate")
+	req.Header.Add("X-Unrelated", "should-not-propagate")
+
+	resp, err := nc.RequestMsg(req, time.Second)
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("custom"), resp.Data)
+
+	assert.NotNil(t, resp.Header)
+	assert.ElementsMatch(t, []string{"cid-1", "cid-2"}, resp.Header[consumer.HeaderCorrelationIDKey])
+	assert.Equal(t, "tp-1", resp.Header.Get(consumer.HeaderTraceParentKey))
+	assert.Equal(t, "ts-1", resp.Header.Get(consumer.HeaderTraceStateKey))
+	assert.Equal(t, "bg-1", resp.Header.Get(consumer.HeaderBaggageKey))
+	assert.Empty(t, resp.Header.Get(consumer.HeaderErrorKey))
+	assert.Empty(t, resp.Header.Get("X-Unrelated"))
+}
+
 func TestJetStream_Ack(t *testing.T) {
 	s, url := runServer(true)
 	defer s.Shutdown()
