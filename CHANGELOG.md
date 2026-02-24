@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0](https://github.com/silviolleite/loafer-natsx/compare/v1.0.0...v1.1.0) (2026-02-24)
+
+
+### Features
+
+* **broker:** add prometheus metrics ([a7dd1ba](https://github.com/silviolleite/loafer-natsx/commit/a7dd1bac0989e4e67f47762351894dc9a556ee3f))
+
 ## 1.0.0 (2026-02-20)
 
 
