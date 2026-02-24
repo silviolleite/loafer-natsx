@@ -79,22 +79,22 @@ The project is organized into focused packages:
                                    │
             ┌──────────────────────┼──────────────────────┐
             │                      │                      │
-     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼──────┐
+     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼───────┐
      │   Router    │       │   Router      │       │   Router     │
      │ (Route A)   │       │ (Route B)     │       │ (Route N)    │
-     └──────┬──────┘       └───────┬───────┘       └──────┬──────┘
+     └──────┬──────┘       └───────┬───────┘       └──────┬───────┘
             │                      │                      │
-     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼──────┐
+     ┌──────▼──────┐       ┌───────▼───────┐       ┌──────▼───────┐
      │  Consumer   │       │   Consumer    │       │   Consumer   │
      │ (Workers)   │       │  (Workers)    │       │  (Workers)   │
-     └──────┬──────┘       └───────┬───────┘       └──────┬──────┘
+     └──────┬──────┘       └───────┬───────┘       └──────┬───────┘
             │                      │                      │
             └──────────────┬───────┴──────────────┬───────┘
                            │                      │
-                     ┌─────▼─────┐          ┌─────▼─────┐
-                     │   NATS    │          │ JetStream │
+                     ┌─────▼─────┐          ┌─────▼──────┐
+                     │   NATS    │          │ JetStream  │
                      │  (Core)   │          │ Persistence│
-                     └───────────┘          └───────────┘
+                     └───────────┘          └────────────┘
 
 ------------------------------------------------------------------------
 
@@ -123,6 +123,18 @@ The broker guarantees:
 
 This enables building services that consume multiple subjects safely
 without risking inconsistent runtime states.
+
+The broker supports Prometheus metrics out of the box via the `WithMetrics` option.
+
+## Available Metrics
+
+| Metric                              | Type      | Labels    | Description                                |
+|-------------------------------------|-----------|-----------|--------------------------------------------|
+| `loafer_requests_total`             | Counter   | `subject` | Total number of processed messages         |
+| `loafer_errors_total`               | Counter   | `subject` | Total number of handler errors             |
+| `loafer_request_duration_seconds`   | Histogram | `subject` | Duration of message handler execution      |
+| `loafer_inflight`                   | Gauge     | -         | Number of handlers currently being executed|
+
 
 ------------------------------------------------------------------------
 
