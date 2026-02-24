@@ -18,8 +18,9 @@ const defaultWorkers = 5
 
 // Broker represents a message broker that coordinates message routing and processing using NATS and configurable workers.
 type Broker struct {
-	nc      *nats.Conn
 	log     logger.Logger
+	nc      *nats.Conn
+	metrics *brokerMetrics
 	workers int
 }
 
@@ -41,6 +42,7 @@ func New(nc *nats.Conn, log logger.Logger, opts ...Option) *Broker {
 		nc:      nc,
 		log:     log,
 		workers: cfg.workers,
+		metrics: cfg.metrics,
 	}
 }
 
@@ -121,7 +123,8 @@ func (b *Broker) runRoute(
 				}
 			}()
 
-			if sErr := cons.Start(ctx, reg.Route(), reg.Handler()); sErr != nil {
+			wrapped := b.instrument(reg)
+			if sErr := cons.Start(ctx, reg.Route(), wrapped); sErr != nil {
 				b.log.Error(
 					"route worker failed",
 					"subject", reg.Route().Subject(),

@@ -8,6 +8,8 @@ import (
 
 	"github.com/nats-io/nats-server/v2/server"
 	"github.com/nats-io/nats.go"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 
 	loafernatsx "github.com/silviolleite/loafer-natsx"
@@ -248,4 +250,82 @@ func TestBroker_PanicRecovery(t *testing.T) {
 	err := b.Run(ctx, reg)
 
 	assert.NoError(t, err)
+}
+
+func counterValueBySubject(mfs []*dto.MetricFamily, metricName string, subject string) float64 {
+	for _, mf := range mfs {
+		if mf.GetName() != metricName {
+			continue
+		}
+
+		for _, m := range mf.GetMetric() {
+			lbls := m.GetLabel()
+
+			for _, l := range lbls {
+				if l.GetName() == "subject" && l.GetValue() == subject {
+					if m.GetCounter() != nil {
+						return m.GetCounter().GetValue()
+					}
+				}
+			}
+		}
+	}
+	return 0
+}
+
+func TestWithMetricsOption(t *testing.T) {
+	s, url := runServer()
+	defer s.Shutdown()
+
+	nc, _ := nats.Connect(url)
+	defer nc.Close()
+
+	reg := prometheus.NewRegistry()
+
+	b := broker.New(
+		nc,
+		logger.NopLogger{},
+		broker.WithWorkers(1),
+		broker.WithMetrics(reg),
+	)
+	assert.NotNil(t, b)
+
+	subject := "metrics.subject"
+	r, _ := router.New(router.TypePubSub, subject)
+
+	registration, _ := broker.NewRouteRegistration(
+		r,
+		func(ctx context.Context, _ []byte) (any, error) {
+			return nil, nil
+		},
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	go func() {
+		ticker := time.NewTicker(20 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				_ = nc.Publish(subject, []byte("msg"))
+				_ = nc.Flush()
+			}
+		}
+	}()
+
+	err := b.Run(ctx, registration)
+	assert.NoError(t, err)
+
+	assert.Eventually(t, func() bool {
+		mfs, gErr := reg.Gather()
+		if gErr != nil {
+			return false
+		}
+		return counterValueBySubject(mfs, "loafer_requests_total", subject) >= 1.0
+	}, 2*time.Second, 25*time.Millisecond)
 }

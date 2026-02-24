@@ -1,6 +1,11 @@
 package broker
 
+import (
+	"github.com/prometheus/client_golang/prometheus"
+)
+
 type config struct {
+	metrics *brokerMetrics
 	workers int
 }
 
@@ -13,5 +18,12 @@ func WithWorkers(n int) Option {
 		if n > 0 {
 			c.workers = n
 		}
+	}
+}
+
+// WithMetrics sets up Prometheus metrics using the provided Registerer and applies them to the configuration.
+func WithMetrics(reg prometheus.Registerer) Option {
+	return func(c *config) {
+		c.metrics = newMetrics(reg)
 	}
 }
