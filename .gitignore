@@ -32,3 +32,8 @@ terraform.tfvars
 node_modules/
 package-lock.json
 .husky/
+
+# AI
+# AI
+.aiassistant/
+.kiro/
