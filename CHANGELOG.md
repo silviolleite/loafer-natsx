@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
-* **reply:** add serialized error body JSON, consistent with the contest type ([12e7863](https://github.com/silviolleite/loafer-natsx/commit/12e78639f33c979f514843913a9a884ba2f13f65))
+* **reply:** add serialized error body JSON, consistent with the content type ([12e7863](https://github.com/silviolleite/loafer-natsx/commit/12e78639f33c979f514843913a9a884ba2f13f65))
 
 ## [1.1.0](https://github.com/silviolleite/loafer-natsx/compare/v1.0.0...v1.1.0) (2026-02-24)
 
