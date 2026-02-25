@@ -3,6 +3,7 @@ package conn
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -53,7 +54,7 @@ func Connect(url string, opts ...Option) (*nats.Conn, error) {
 func randomSuffix() string {
 	b := make([]byte, randomSuffixNameLength)
 	if _, err := rand.Read(b); err != nil {
-		return "unknown"
+		return fmt.Sprintf("%d", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(b)
 }
