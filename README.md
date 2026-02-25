@@ -65,6 +65,7 @@ The project is organized into focused packages:
 -   consumer → Message consumption engine
 -   broker → Multi-route concurrent orchestration
 -   logger → Logging abstraction
+-   typed → Generic type-safe wrappers for producers and handlers
 
 ## High-Level Architecture Diagram
 
@@ -135,6 +136,29 @@ The broker supports Prometheus metrics out of the box via the `WithMetrics` opti
 | `loafer_request_duration_seconds`   | Histogram | `subject` | Duration of message handler execution      |
 | `loafer_inflight`                   | Gauge     | -         | Number of handlers currently being executed|
 
+
+------------------------------------------------------------------------
+
+# Typed Package
+
+The `typed` package provides compile-time type safety for producers and
+consumers using Go generics. It wraps the existing API with zero
+breaking changes.
+
+It provides:
+
+-   `Codec[T]` interface for pluggable serialization (JSON, Protobuf, etc.)
+-   `JSONCodec[T]` built-in implementation using `encoding/json`
+-   `Producer[T]` typed wrapper with `Publish` method
+-   `Requester[T, R]` typed request-reply with automatic response decoding
+-   `WrapHandler` adapter from typed handler to `consumer.HandlerFunc`
+
+Applications opt-in gradually — existing raw `[]byte` usage continues to
+work unchanged.
+
+## Usage
+
+[Typed example](https://github.com/silviolleite/loafer-natsx/tree/main/examples/typed)
 
 ------------------------------------------------------------------------
 
