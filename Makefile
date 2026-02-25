@@ -7,7 +7,7 @@ GOIMPORTS        = goimports
 GOLANGCI_LINT    = golangci-lint
 GOFIELDALIGNMENT = fieldalignment
 GOVULNCHECK		 = govulncheck
-GOLANGCI_VERSION = v2.8.0
+GOLANGCI_VERSION = v2.10.1
 GOPATH_BIN       = $(shell $(GO) env GOPATH)/bin
 LOCAL_PREFIX     = github.com/silviolleite/loafer-natsx
 

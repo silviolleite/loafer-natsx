@@ -1,6 +1,6 @@
 module github.com/silviolleite/loafer-natsx
 
-go 1.25
+go 1.26
 
 require (
 	github.com/nats-io/nats-server/v2 v2.12.4
@@ -26,7 +26,7 @@ require (
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/common v0.67.5 // indirect
-	github.com/prometheus/procfs v0.19.2 // indirect
+	github.com/prometheus/procfs v0.20.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
