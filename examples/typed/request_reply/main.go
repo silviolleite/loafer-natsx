@@ -52,11 +52,15 @@ func main() {
 		return
 	}
 
-	// Create request-reply route
+	// Create request-reply route with typed reply function
+	replyFn := typed.WrapReply(func(ctx context.Context, result ProcessedOrder, handlerErr error) ([]byte, nats.Header, error) {
+		return reply.JSON(ctx, result, handlerErr)
+	})
+
 	route, err := router.New(
 		router.TypeRequestReply,
 		"orders.process",
-		router.WithReply(reply.JSON),
+		router.WithReply(replyFn),
 		router.WithQueueGroup("orders-processor"),
 	)
 	if err != nil {
