@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0](https://github.com/silviolleite/loafer-natsx/compare/v1.1.0...v1.2.0) (2026-02-25)
+
+
+### Features
+
+* add the typed package to wrapper the loafer-natsx resources with custom typed contracts ([7065707](https://github.com/silviolleite/loafer-natsx/commit/706570793ef68ed99fe284a376524d715982cc33))
+
+
+### Bug Fixes
+
+* **reply:** add serialized error body JSON, consistent with the contest type ([12e7863](https://github.com/silviolleite/loafer-natsx/commit/12e78639f33c979f514843913a9a884ba2f13f65))
+
 ## [1.1.0](https://github.com/silviolleite/loafer-natsx/compare/v1.0.0...v1.1.0) (2026-02-24)
 
 
