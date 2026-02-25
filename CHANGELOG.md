@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0](https://github.com/silviolleite/loafer-natsx/compare/v1.2.0...v1.3.0) (2026-02-25)
+
+
+### Features
+
+* **typed:** add wrapReply wrapper ([eb1ef93](https://github.com/silviolleite/loafer-natsx/commit/eb1ef93e17264a9b94b00955aa13945544e33ebc))
+
 ## [1.2.0](https://github.com/silviolleite/loafer-natsx/compare/v1.1.0...v1.2.0) (2026-02-25)
 
 
