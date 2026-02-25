@@ -40,7 +40,7 @@ func TestJSON_ErrorWithoutCode(t *testing.T) {
 	assert.Equal(t, "application/json", h.Get(reply.HeaderContentType))
 	assert.Equal(t, string(reply.StatusError), h.Get(reply.HeaderStatus))
 	assert.Empty(t, h.Get(reply.HeaderErrorCode))
-	assert.Equal(t, "boom", string(b))
+	assert.JSONEq(t, `{"error":"boom"}`, string(b))
 }
 
 func TestJSON_ErrorWithCode(t *testing.T) {
@@ -54,7 +54,7 @@ func TestJSON_ErrorWithCode(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, string(reply.StatusError), h.Get(reply.HeaderStatus))
 	assert.Equal(t, "E123", h.Get(reply.HeaderErrorCode))
-	assert.Equal(t, "failure", string(b))
+	assert.JSONEq(t, `{"error":"failure"}`, string(b))
 }
 
 func TestJSON_MarshalError(t *testing.T) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/nats-io/nats.go"
 )
@@ -57,7 +58,12 @@ func JSON(ctx context.Context, result any, handlerErr error) ([]byte, nats.Heade
 			h.Set(HeaderErrorCode, ce.Code())
 		}
 
-		return []byte(handlerErr.Error()), h, nil
+		errBody, err := json.Marshal(map[string]string{"error": handlerErr.Error()})
+		if err != nil {
+			return nil, nil, fmt.Errorf("reply: marshal error body: %w", err)
+		}
+
+		return errBody, h, nil
 	}
 
 	b, err := json.Marshal(result)
