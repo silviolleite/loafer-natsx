@@ -152,6 +152,7 @@ It provides:
 -   `Producer[T]` typed wrapper with `Publish` method
 -   `Requester[T, R]` typed request-reply with automatic response decoding
 -   `WrapHandler` adapter from typed handler to `consumer.HandlerFunc`
+-   `WrapReply` adapter from typed `ReplyFunc[R]` to `router.ReplyFunc`
 
 Applications opt-in gradually — existing raw `[]byte` usage continues to
 work unchanged.
