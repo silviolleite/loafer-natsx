@@ -80,11 +80,12 @@ func (p *Producer) Publish(
 
 // Request sends a request to the configured subject with the provided data and waits for a response.
 // Only Core NATS producers support request operations.
-// Returns an error if the configured Publisher does not support request operations.
+// Returns a *Response containing the reply data and headers, or an error if the configured Publisher
+// does not support request operations.
 func (p *Producer) Request(
 	ctx context.Context,
 	data []byte,
-) ([]byte, error) {
+) (*Response, error) {
 	r, ok := p.publisher.(Requester)
 	if !ok {
 		return nil, loafernatsx.ErrRequestNotSupported

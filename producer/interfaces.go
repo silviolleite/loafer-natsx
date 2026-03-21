@@ -16,6 +16,7 @@ type Publisher interface {
 // Requester defines an interface for sending requests with a subject and data and receiving a response.
 type Requester interface {
 
-	// Request sends a request with the specified subject and data, waits for a response, and returns the response or an error.
-	Request(ctx context.Context, subject string, data []byte) ([]byte, error)
+	// Request sends a request with the specified subject and data, waits for a response,
+	// and returns a *Response containing the reply data and headers, or an error.
+	Request(ctx context.Context, subject string, data []byte) (*Response, error)
 }

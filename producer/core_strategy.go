@@ -29,10 +29,10 @@ func (c *coreStrategy) Request(
 	ctx context.Context,
 	subject string,
 	data []byte,
-) ([]byte, error) {
+) (*Response, error) {
 	msg, err := c.nc.RequestWithContext(ctx, subject, data)
 	if err != nil {
 		return nil, err
 	}
-	return msg.Data, nil
+	return &Response{Data: msg.Data, Header: msg.Header}, nil
 }
