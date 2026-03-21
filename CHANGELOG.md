@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0](https://github.com/silviolleite/loafer-natsx/compare/v1.3.0...v1.4.0) (2026-03-21)
+
+
+### Features
+
+* **producer:** add Response struct and propagate NATS reply headers ([d31ec61](https://github.com/silviolleite/loafer-natsx/commit/d31ec61e44dc492f27c6f6550a10984e22c4993f))
+* **typed:** add ReplyError type and error detection in Requester ([4d7685a](https://github.com/silviolleite/loafer-natsx/commit/4d7685abdf9124aa46a783c524557f787872924a))
+
 ## [1.3.0](https://github.com/silviolleite/loafer-natsx/compare/v1.2.0...v1.3.0) (2026-02-25)
 
 
