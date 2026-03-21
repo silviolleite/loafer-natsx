@@ -37,3 +37,6 @@ package-lock.json
 # AI
 .aiassistant/
 .kiro/
+
+# temporary
+tmp/

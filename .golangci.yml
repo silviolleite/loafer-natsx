@@ -159,6 +159,7 @@ linters:
       - third_party$
       - builtin$
       - examples
+      - tmp
 formatters:
   enable:
     - gofmt
@@ -176,3 +177,4 @@ formatters:
       - third_party$
       - builtin$
       - examples
+      - tmp
