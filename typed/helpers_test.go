@@ -24,12 +24,12 @@ func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.Pub
 
 // mockRequester implements both producer.Publisher and producer.Requester.
 type mockRequester struct {
-	reqErr error
+	reqErr  error
+	reqResp *producer.Response
 	mockPublisher
-	reqResp []byte
 }
 
-func (m *mockRequester) Request(_ context.Context, subject string, data []byte) ([]byte, error) {
+func (m *mockRequester) Request(_ context.Context, _ string, _ []byte) (*producer.Response, error) {
 	return m.reqResp, m.reqErr
 }
 
