@@ -91,6 +91,6 @@ func sendRequest(prod *producer.Producer, id int) {
 	slog.Info("response received",
 		"id", id,
 		"latency_ms", latency.Milliseconds(),
-		"response", string(resp),
+		"response", string(resp.Data),
 	)
 }

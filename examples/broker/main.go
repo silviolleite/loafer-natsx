@@ -72,7 +72,7 @@ func main() {
 		"orders.cancelled",
 		router.WithStream("ORDERS"),
 		router.WithDurable("orders-cancelled-durable"),
-		router.WithDeliveryPolicy(router.DeliverNewPolicy),
+		router.WithDeliveryPolicy(router.DeliverAllPolicy),
 	)
 	if err != nil {
 		slog.Error("failed to create route", "error", err)

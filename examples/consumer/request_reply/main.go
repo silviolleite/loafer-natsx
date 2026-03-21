@@ -87,7 +87,7 @@ func main() {
 		return
 	}
 
-	fmt.Println("received reply:", string(resp))
+	fmt.Println("received reply:", string(resp.Data))
 
 	// output:
 	// received request: {"order_id":"123"}
