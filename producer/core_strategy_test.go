@@ -9,6 +9,7 @@ import (
 	natstest "github.com/nats-io/nats-server/v2/test"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/silviolleite/loafer-natsx/producer"
 )
@@ -57,23 +58,51 @@ func TestCoreStrategy_Publish(t *testing.T) {
 }
 
 func TestCoreStrategy_Request(t *testing.T) {
-	s, url := runServer()
-	defer s.Shutdown()
+	t.Run("returns Response with Data and Header", func(t *testing.T) {
+		s, url := runServer()
+		defer s.Shutdown()
 
-	nc, err := nats.Connect(url)
-	assert.NoError(t, err)
-	defer nc.Close()
+		nc, err := nats.Connect(url)
+		require.NoError(t, err)
+		defer nc.Close()
 
-	_, err = nc.Subscribe("test.req", func(msg *nats.Msg) {
-		_ = msg.Respond([]byte("ok"))
+		_, err = nc.Subscribe("test.req", func(msg *nats.Msg) {
+			reply := &nats.Msg{
+				Data:   []byte("ok"),
+				Header: nats.Header{},
+			}
+			reply.Header.Set("X-Status", "success")
+			reply.Header.Set("X-Custom", "value")
+			_ = msg.RespondMsg(reply)
+		})
+		require.NoError(t, err)
+
+		strategy := producer.NewCoreStrategy(nc)
+		req := strategy.(producer.Requester)
+
+		resp, err := req.Request(context.Background(), "test.req", []byte("ping"))
+		require.NoError(t, err)
+		assert.Equal(t, []byte("ok"), resp.Data)
+		assert.Equal(t, "success", resp.Header.Get("X-Status"))
+		assert.Equal(t, "value", resp.Header.Get("X-Custom"))
 	})
-	assert.NoError(t, err)
 
-	strategy := producer.NewCoreStrategy(nc)
+	t.Run("returns nil and error when no responders", func(t *testing.T) {
+		s, url := runServer()
+		defer s.Shutdown()
 
-	req := strategy.(producer.Requester)
+		nc, err := nats.Connect(url, nats.NoEcho())
+		require.NoError(t, err)
+		defer nc.Close()
 
-	resp, err := req.Request(context.Background(), "test.req", []byte("ping"))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("ok"), resp)
+		strategy := producer.NewCoreStrategy(nc)
+		req := strategy.(producer.Requester)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+
+		resp, err := req.Request(ctx, "test.no.responders", []byte("ping"))
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
 }

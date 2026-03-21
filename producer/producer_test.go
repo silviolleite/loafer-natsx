@@ -26,12 +26,12 @@ func (m *mockPublisher) Publish(ctx context.Context, msg *nats.Msg, opts produce
 }
 
 type mockRequester struct {
-	mockPublisher
 	reqErr   error
-	response []byte
+	response *producer.Response
+	mockPublisher
 }
 
-func (m *mockRequester) Request(ctx context.Context, subject string, data []byte) ([]byte, error) {
+func (m *mockRequester) Request(_ context.Context, _ string, _ []byte) (*producer.Response, error) {
 	if m.reqErr != nil {
 		return nil, m.reqErr
 	}
@@ -102,14 +102,14 @@ func TestRequest_NotSupported(t *testing.T) {
 
 func TestRequest_Success(t *testing.T) {
 	mr := &mockRequester{
-		response: []byte("ok"),
+		response: &producer.Response{Data: []byte("ok")},
 	}
 
 	p, _ := producer.New(mr, "test.subject")
 
 	resp, err := p.Request(context.Background(), []byte("data"))
 	assert.NoError(t, err)
-	assert.Equal(t, []byte("ok"), resp)
+	assert.Equal(t, []byte("ok"), resp.Data)
 }
 
 func TestRequest_Error(t *testing.T) {
