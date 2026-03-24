@@ -134,7 +134,7 @@ The broker supports Prometheus metrics out of the box via the `WithMetrics` opti
 | `loafer_requests_total`             | Counter   | `subject` | Total number of processed messages         |
 | `loafer_errors_total`               | Counter   | `subject` | Total number of handler errors             |
 | `loafer_request_duration_seconds`   | Histogram | `subject` | Duration of message handler execution      |
-| `loafer_inflight`                   | Gauge     | -         | Number of handlers currently being executed|
+| `loafer_inflight`                   | Gauge     | `subject` | Number of handlers currently being executed|
 
 
 ------------------------------------------------------------------------
