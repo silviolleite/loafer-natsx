@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0](https://github.com/silviolleite/loafer-natsx/compare/v1.4.0...v1.5.0) (2026-03-24)
+
+
+### Features
+
+* **broker:** add subject label to loafer_inflight gauge ([4ed8297](https://github.com/silviolleite/loafer-natsx/commit/4ed8297a2f9691c2c6192a41856dc7d56139f55f))
+
 ## [1.4.0](https://github.com/silviolleite/loafer-natsx/compare/v1.3.0...v1.4.0) (2026-03-21)
 
 
