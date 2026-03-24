@@ -21,8 +21,8 @@ func (b *Broker) instrument(
 	return func(ctx context.Context, data []byte) (any, error) {
 		start := time.Now()
 
-		b.metrics.inflightInc()
-		defer b.metrics.inflightDec()
+		b.metrics.inflightInc(subject)
+		defer b.metrics.inflightDec(subject)
 
 		res, err := handler(ctx, data)
 

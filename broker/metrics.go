@@ -7,7 +7,7 @@ import (
 )
 
 type brokerMetrics struct {
-	inflight      prometheus.Gauge
+	inflight      *prometheus.GaugeVec
 	requestsTotal *prometheus.CounterVec
 	errorsTotal   *prometheus.CounterVec
 	duration      *prometheus.HistogramVec
@@ -15,11 +15,12 @@ type brokerMetrics struct {
 
 func newMetrics(reg prometheus.Registerer) *brokerMetrics {
 	m := &brokerMetrics{
-		inflight: prometheus.NewGauge(
+		inflight: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "loafer_inflight",
 				Help: "Number of inflight handler executions",
 			},
+			[]string{"subject"},
 		),
 		requestsTotal: prometheus.NewCounterVec(
 			prometheus.CounterOpts{
@@ -55,12 +56,12 @@ func newMetrics(reg prometheus.Registerer) *brokerMetrics {
 	return m
 }
 
-func (m *brokerMetrics) inflightInc() {
-	m.inflight.Inc()
+func (m *brokerMetrics) inflightInc(subject string) {
+	m.inflight.WithLabelValues(subject).Inc()
 }
 
-func (m *brokerMetrics) inflightDec() {
-	m.inflight.Dec()
+func (m *brokerMetrics) inflightDec(subject string) {
+	m.inflight.WithLabelValues(subject).Dec()
 }
 
 func (m *brokerMetrics) incRequest(subject string) {

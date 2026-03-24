@@ -27,17 +27,20 @@ func findMetricFamily(t *testing.T, mfs []*dto.MetricFamily, name string) *dto.M
 	return nil
 }
 
-func getGaugeValue(t *testing.T, mfs []*dto.MetricFamily, name string) float64 {
+func getGaugeValue(t *testing.T, mfs []*dto.MetricFamily, name, subject string) float64 {
 	t.Helper()
 	mf := findMetricFamily(t, mfs, name)
 	if mf == nil {
 		return 0
 	}
-	ms := mf.GetMetric()
-	if len(ms) == 0 {
-		return 0
+	for _, m := range mf.GetMetric() {
+		for _, l := range m.GetLabel() {
+			if l.GetName() == "subject" && l.GetValue() == subject {
+				return m.GetGauge().GetValue()
+			}
+		}
 	}
-	return ms[0].GetGauge().GetValue()
+	return 0
 }
 
 func getCounterValue(t *testing.T, mfs []*dto.MetricFamily, name, subject string) float64 {
@@ -83,16 +86,18 @@ func TestInflightIncDec(t *testing.T) {
 	reg := prometheus.NewRegistry()
 	m := newMetrics(reg)
 
+	subject := "test.subject"
+
 	mfs := gatherMetrics(t, reg)
-	assert.Equal(t, float64(0), getGaugeValue(t, mfs, "loafer_inflight"))
+	assert.Equal(t, float64(0), getGaugeValue(t, mfs, "loafer_inflight", subject))
 
-	m.inflightInc()
+	m.inflightInc(subject)
 	mfs = gatherMetrics(t, reg)
-	assert.Equal(t, float64(1), getGaugeValue(t, mfs, "loafer_inflight"))
+	assert.Equal(t, float64(1), getGaugeValue(t, mfs, "loafer_inflight", subject))
 
-	m.inflightDec()
+	m.inflightDec(subject)
 	mfs = gatherMetrics(t, reg)
-	assert.Equal(t, float64(0), getGaugeValue(t, mfs, "loafer_inflight"))
+	assert.Equal(t, float64(0), getGaugeValue(t, mfs, "loafer_inflight", subject))
 }
 
 func TestIncRequest_IncrementsCounterForSubject(t *testing.T) {
