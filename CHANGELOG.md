@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0](https://github.com/silviolleite/loafer-natsx/compare/v1.6.0...v1.7.0) (2026-03-26)
+
+
+### Features
+
+* add ErrRequestTimeout sentinel error for request-reply deadline ([390b41e](https://github.com/silviolleite/loafer-natsx/commit/390b41e2015c864db6ffe1d430cb66dada1f4e41))
+* **producer:** add request timeout configuration with default 10s deadline ([ca94e9c](https://github.com/silviolleite/loafer-natsx/commit/ca94e9cbb205f8975d19b5b471b84c28f4fae25d))
+* **producer:** apply request timeout with context deadline in Request ([5cb8354](https://github.com/silviolleite/loafer-natsx/commit/5cb8354f650c8adb687d6296a956b7721338882e))
+
 ## [1.6.0](https://github.com/silviolleite/loafer-natsx/compare/v1.5.0...v1.6.0) (2026-03-24)
 
 
