@@ -2,6 +2,8 @@ package producer
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/nats-io/nats.go"
 
@@ -11,9 +13,10 @@ import (
 
 // Producer represents a message producer capable of publishing messages to a specific subject with customizable options.
 type Producer struct {
-	log       logger.Logger
-	publisher Publisher
-	subject   string
+	log            logger.Logger
+	publisher      Publisher
+	subject        string
+	requestTimeout time.Duration
 }
 
 // New initializes and returns a new Producer instance configured with the given Publisher, subject, and optional options.
@@ -32,8 +35,9 @@ func New(
 	}
 
 	cfg := config{
-		subject: subject,
-		log:     logger.NopLogger{},
+		subject:        subject,
+		log:            logger.NopLogger{},
+		requestTimeout: defaultRequestTimeout,
 	}
 
 	for _, opt := range opts {
@@ -41,9 +45,10 @@ func New(
 	}
 
 	return &Producer{
-		subject:   cfg.subject,
-		log:       cfg.log,
-		publisher: publisher,
+		subject:        cfg.subject,
+		log:            cfg.log,
+		publisher:      publisher,
+		requestTimeout: cfg.requestTimeout,
 	}, nil
 }
 
@@ -80,6 +85,9 @@ func (p *Producer) Publish(
 
 // Request sends a request to the configured subject with the provided data and waits for a response.
 // Only Core NATS producers support request operations.
+// When a request timeout is configured via WithRequestTimeout, the context is
+// wrapped with a deadline so the call does not block indefinitely if the
+// consumer becomes unavailable.
 // Returns a *Response containing the reply data and headers, or an error if the configured Publisher
 // does not support request operations.
 func (p *Producer) Request(
@@ -91,5 +99,20 @@ func (p *Producer) Request(
 		return nil, loafernatsx.ErrRequestNotSupported
 	}
 
-	return r.Request(ctx, p.subject, data)
+	if p.requestTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, p.requestTimeout)
+		defer cancel()
+	}
+
+	resp, err := r.Request(ctx, p.subject, data)
+	if err != nil {
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("%w: %w", loafernatsx.ErrRequestTimeout, err)
+		}
+
+		return nil, err
+	}
+
+	return resp, nil
 }
