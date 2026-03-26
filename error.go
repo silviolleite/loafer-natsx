@@ -33,6 +33,9 @@ const (
 
 	// ErrRequestNotSupported indicates that request-reply routes are not supported for JetStream producers.
 	ErrRequestNotSupported = Err("request-reply routes are not supported for JetStream producers")
+
+	// ErrRequestTimeout indicates that a request-reply operation exceeded its deadline.
+	ErrRequestTimeout = Err("request timeout: consumer did not reply in time")
 )
 
 // Err represents an error as a string type and implements the error interface.

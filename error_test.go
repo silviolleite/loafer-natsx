@@ -30,6 +30,7 @@ func TestSentinelErrors_ErrorStrings(t *testing.T) {
 		{loafernatsx.ErrNoRoutes, "no routes provided"},
 		{loafernatsx.ErrNilRouteRegistration, "route registration cannot be nil"},
 		{loafernatsx.ErrRequestNotSupported, "request-reply routes are not supported for JetStream producers"},
+		{loafernatsx.ErrRequestTimeout, "request timeout: consumer did not reply in time"},
 	}
 
 	for _, tt := range tests {
