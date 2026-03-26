@@ -1,8 +1,15 @@
 package producer
 
-import "github.com/silviolleite/loafer-natsx/logger"
+import (
+	"time"
+
+	"github.com/silviolleite/loafer-natsx/logger"
+)
+
+const defaultRequestTimeout = 10 * time.Second
 
 type config struct {
-	log     logger.Logger
-	subject string
+	log            logger.Logger
+	subject        string
+	requestTimeout time.Duration
 }
