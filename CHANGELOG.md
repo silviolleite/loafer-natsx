@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0](https://github.com/silviolleite/loafer-natsx/compare/v1.7.0...v1.8.0) (2026-04-03)
+
+
+### Features
+
+* **producer:** propagate PublishResult through Producer and typed.Producer ([719002c](https://github.com/silviolleite/loafer-natsx/commit/719002c55cbe883fe4664592a7e1a762bc5013c4))
+* **producer:** return PublishResult from Publisher.Publish with JetStream ack metadata ([8c4e9f0](https://github.com/silviolleite/loafer-natsx/commit/8c4e9f0939caed8b0fe84b110a719942a3121d66))
+
 ## [1.7.0](https://github.com/silviolleite/loafer-natsx/compare/v1.6.0...v1.7.0) (2026-03-26)
 
 
