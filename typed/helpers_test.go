@@ -16,10 +16,13 @@ type mockPublisher struct {
 	called bool
 }
 
-func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.PublishOptions) error {
+func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.PublishOptions) (*producer.PublishResult, error) {
 	m.called = true
 	m.msg = msg
-	return m.err
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &producer.PublishResult{}, nil
 }
 
 // mockRequester implements both producer.Publisher and producer.Requester.

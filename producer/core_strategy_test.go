@@ -39,7 +39,7 @@ func TestCoreStrategy_Publish(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	err = strategy.Publish(
+	result, err := strategy.Publish(
 		context.Background(),
 		&nats.Msg{
 			Subject: "test.core",
@@ -49,6 +49,7 @@ func TestCoreStrategy_Publish(t *testing.T) {
 	)
 
 	assert.NoError(t, err)
+	assert.NotNil(t, result)
 
 	select {
 	case data := <-received:

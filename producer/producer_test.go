@@ -20,10 +20,13 @@ type mockPublisher struct {
 	called bool
 }
 
-func (m *mockPublisher) Publish(ctx context.Context, msg *nats.Msg, opts producer.PublishOptions) error {
+func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.PublishOptions) (*producer.PublishResult, error) {
 	m.called = true
 	m.msg = msg
-	return m.err
+	if m.err != nil {
+		return nil, m.err
+	}
+	return &producer.PublishResult{}, nil
 }
 
 type mockRequester struct {
@@ -64,8 +67,9 @@ func TestPublish_Success(t *testing.T) {
 	p, err := producer.New(mp, "test.subject", producer.WithLogger(logger.NopLogger{}))
 	assert.NoError(t, err)
 
-	err = p.Publish(context.Background(), []byte("data"))
+	result, err := p.Publish(context.Background(), []byte("data"))
 	assert.NoError(t, err)
+	assert.NotNil(t, result)
 	assert.True(t, mp.called)
 	assert.Equal(t, "test.subject", mp.msg.Subject)
 	assert.Equal(t, []byte("data"), mp.msg.Data)
@@ -79,7 +83,7 @@ func TestPublish_WithHeaders(t *testing.T) {
 	h := nats.Header{}
 	h.Set("k", "v")
 
-	err := p.Publish(
+	_, err := p.Publish(
 		context.Background(),
 		[]byte("data"),
 		producer.PublishWithHeaders(h),
@@ -94,7 +98,8 @@ func TestPublish_Error(t *testing.T) {
 
 	p, _ := producer.New(mp, "test.subject")
 
-	err := p.Publish(context.Background(), []byte("data"))
+	result, err := p.Publish(context.Background(), []byte("data"))
+	assert.Nil(t, result)
 	assert.Error(t, err)
 }
 

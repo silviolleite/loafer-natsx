@@ -35,8 +35,9 @@ func TestProducer_Publish_Success(t *testing.T) {
 	p, err := typed.NewProducer[order](mp, "orders.new", typed.JSONCodec[order]{})
 	require.NoError(t, err)
 
-	err = p.Publish(context.Background(), order{ID: "1", Amount: 9.99})
+	result, err := p.Publish(context.Background(), order{ID: "1", Amount: 9.99})
 	assert.NoError(t, err)
+	assert.NotNil(t, result)
 	assert.True(t, mp.called)
 	assert.Equal(t, "orders.new", mp.msg.Subject)
 	assert.Contains(t, string(mp.msg.Data), `"id":"1"`)
@@ -47,7 +48,8 @@ func TestProducer_Publish_EncodeError(t *testing.T) {
 	p, err := typed.NewProducer[order](mp, "orders.new", failCodec[order]{})
 	require.NoError(t, err)
 
-	err = p.Publish(context.Background(), order{})
+	result, err := p.Publish(context.Background(), order{})
+	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "encode")
 	assert.False(t, mp.called)
@@ -58,7 +60,8 @@ func TestProducer_Publish_PublisherError(t *testing.T) {
 	p, err := typed.NewProducer[order](mp, "orders.new", typed.JSONCodec[order]{})
 	require.NoError(t, err)
 
-	err = p.Publish(context.Background(), order{ID: "1", Amount: 1})
+	result, err := p.Publish(context.Background(), order{ID: "1", Amount: 1})
+	assert.Nil(t, result)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "nats down")
 }
