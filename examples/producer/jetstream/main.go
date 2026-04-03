@@ -56,9 +56,9 @@ func main() {
 	for i := 1; i <= 5; i++ {
 		data := fmt.Sprintf(`{"order_id": "%d", "amount": %.2f}`, i, nMin+rand.Float64()*(nMax-nMin))
 		// // Publish without deduplication and custom headers
-		// err = prod.Publish(ctx, []byte(data))
+		// _, err = prod.Publish(ctx, []byte(data))
 		// Publish with message ID (deduplication) and custom headers
-		err = prod.Publish(
+		_, err = prod.Publish(
 			ctx, []byte(data),
 			// WithMsgID sets the JetStream deduplication ID for the message
 			// It will use the Deduplication window configured in the stream or default to 2 minutes

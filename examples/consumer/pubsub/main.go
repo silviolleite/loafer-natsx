@@ -71,7 +71,7 @@ func main() {
 	for i := 1; i <= 5; i++ {
 		msg := fmt.Sprintf(`{"order_id": "%d"}`, i)
 
-		err = prod.Publish(ctx, []byte(msg))
+		_, err = prod.Publish(ctx, []byte(msg))
 		if err != nil {
 			slog.Error("publish failed", "error", err)
 			continue

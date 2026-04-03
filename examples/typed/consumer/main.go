@@ -77,7 +77,7 @@ func main() {
 
 	// Publish typed messages
 	for i := 1; i <= 5; i++ {
-		err = prod.Publish(ctx, Order{
+		_, err = prod.Publish(ctx, Order{
 			OrderID: fmt.Sprintf("%d", i),
 			Amount:  float64(i) * 10.50,
 		})

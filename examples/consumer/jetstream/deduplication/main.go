@@ -50,7 +50,7 @@ func main() {
 
 	fmt.Println("Publishing first message...")
 
-	err = prod.Publish(
+	_, err = prod.Publish(
 		ctx,
 		[]byte(`{"order_id":"123"}`),
 		jsprod.PublishWithMsgID(msgID),
@@ -62,7 +62,7 @@ func main() {
 
 	fmt.Println("Publishing duplicate message with same MsgID...")
 
-	err = prod.Publish(
+	_, err = prod.Publish(
 		ctx,
 		[]byte(`{"order_id":"123"}`),
 		jsprod.PublishWithMsgID(msgID),

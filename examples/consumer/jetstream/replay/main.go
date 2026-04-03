@@ -41,7 +41,7 @@ func main() {
 	// Publish messages BEFORE consumer starts
 	for i := 1; i <= 5; i++ {
 		msg := fmt.Sprintf(`{"order_id":"%d"}`, i)
-		_ = prod.Publish(ctx, []byte(msg))
+		_, _ = prod.Publish(ctx, []byte(msg))
 	}
 
 	fmt.Println("messages published before consumer start")

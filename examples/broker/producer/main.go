@@ -82,7 +82,7 @@ func main() {
 		msgID := fmt.Sprintf("order-%d", orderID)
 
 		if orderID%2 == 0 {
-			err = createdProducer.Publish(
+			_, err = createdProducer.Publish(
 				ctx,
 				[]byte(payload),
 				producer.PublishWithMsgID(msgID),
@@ -93,7 +93,7 @@ func main() {
 				)
 			}
 		} else {
-			err = cancelledProducer.Publish(
+			_, err = cancelledProducer.Publish(
 				ctx,
 				[]byte(payload),
 				producer.PublishWithMsgID(msgID),

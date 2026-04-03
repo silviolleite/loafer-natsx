@@ -76,7 +76,7 @@ func main() {
 	prod, _ := jsprod.New(strategy, "orders.failed")
 
 	// Publish a single message
-	_ = prod.Publish(ctx, []byte(`{"order_id":"999"}`))
+	_, _ = prod.Publish(ctx, []byte(`{"order_id":"999"}`))
 
 	// Wait for DLQ message
 	wg.Wait()

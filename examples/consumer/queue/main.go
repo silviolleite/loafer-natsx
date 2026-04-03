@@ -70,7 +70,7 @@ func main() {
 	// Publish messages
 	for i := 1; i <= 10; i++ {
 		msg := fmt.Sprintf(`{"order_id": "%d"}`, i)
-		_ = prod.Publish(ctx, []byte(msg))
+		_, _ = prod.Publish(ctx, []byte(msg))
 	}
 
 	// Wait until all messages are processed

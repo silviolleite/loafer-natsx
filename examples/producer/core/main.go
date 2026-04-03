@@ -47,7 +47,7 @@ func main() {
 	nMax := 1000.0
 	for i := 1; i <= 5; i++ {
 		data := fmt.Sprintf(`{"order_id": "%d", "amount": %.2f}`, i, nMin+rand.Float64()*(nMax-nMin))
-		err = prod.Publish(ctx, []byte(data), producer.PublishWithHeaders(nats.Header{
+		_, err = prod.Publish(ctx, []byte(data), producer.PublishWithHeaders(nats.Header{
 			"order-type": []string{"new"},
 		}))
 		if err != nil {
