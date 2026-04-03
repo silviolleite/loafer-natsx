@@ -31,10 +31,11 @@ func NewProducer[T any](
 }
 
 // Publish encodes msg using the codec and publishes the resulting bytes.
-func (p *Producer[T]) Publish(ctx context.Context, msg T, opts ...producer.PublishOption) error {
+// Returns a *producer.PublishResult with publish metadata and an error if encoding or publishing failed.
+func (p *Producer[T]) Publish(ctx context.Context, msg T, opts ...producer.PublishOption) (*producer.PublishResult, error) {
 	data, err := p.codec.Encode(msg)
 	if err != nil {
-		return fmt.Errorf("typed: encode: %w", err)
+		return nil, fmt.Errorf("typed: encode: %w", err)
 	}
 
 	return p.inner.Publish(ctx, data, opts...)

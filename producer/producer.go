@@ -53,11 +53,12 @@ func New(
 }
 
 // Publish sends a message to the configured subject using the provided data and optional publish options.
+// Returns a *PublishResult with publish metadata and an error if the publish failed.
 func (p *Producer) Publish(
 	ctx context.Context,
 	data []byte,
 	opts ...PublishOption,
-) error {
+) (*PublishResult, error) {
 	pubCfg := PublishOptions{}
 
 	for _, opt := range opts {
