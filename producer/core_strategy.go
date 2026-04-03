@@ -16,12 +16,16 @@ func NewCoreStrategy(nc *nats.Conn) Publisher {
 }
 
 // Publish sends a message to a specified NATS subject using the configured connection in coreStrategy.
+// Core NATS publish is fire-and-forget, so PublishResult fields remain at zero values.
 func (c *coreStrategy) Publish(
 	ctx context.Context,
 	msg *nats.Msg,
 	_ PublishOptions,
-) error {
-	return c.nc.PublishMsg(msg)
+) (*PublishResult, error) {
+	if err := c.nc.PublishMsg(msg); err != nil {
+		return nil, err
+	}
+	return &PublishResult{}, nil
 }
 
 // Request sends a request to a specified NATS subject and waits for a response within the provided context.

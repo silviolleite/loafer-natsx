@@ -23,11 +23,12 @@ func NewJetStreamStrategy(js jetstream.JetStream, log logger.Logger) Publisher {
 }
 
 // Publish sends a message to a JetStream subject with optional deduplication and logging based on the provided options.
+// Returns a *PublishResult populated from the JetStream server acknowledgement.
 func (j *jetStreamStrategy) Publish(
 	ctx context.Context,
 	msg *nats.Msg,
 	opts PublishOptions,
-) error {
+) (*PublishResult, error) {
 	var jsOpts []jetstream.PublishOpt
 
 	if opts.msgID != "" {
@@ -43,7 +44,7 @@ func (j *jetStreamStrategy) Publish(
 
 	ack, err := j.js.PublishMsg(ctx, msg, jsOpts...)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	j.log.Debug(
@@ -53,5 +54,9 @@ func (j *jetStreamStrategy) Publish(
 		"duplicate", ack.Duplicate,
 	)
 
-	return nil
+	return &PublishResult{
+		Stream:    ack.Stream,
+		Sequence:  ack.Sequence,
+		Duplicate: ack.Duplicate,
+	}, nil
 }
