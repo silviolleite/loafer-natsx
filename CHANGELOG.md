@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0](https://github.com/silviolleite/loafer-natsx/compare/v1.8.0...v1.9.0) (2026-04-23)
+
+
+### Features
+
+* add NakWithDelayError for explicit delayed redelivery on JetStream routes ([12a5f8b](https://github.com/silviolleite/loafer-natsx/commit/12a5f8bad1450514279b621f29a8fe0495e0c544))
+* **consumer:** add Metadata context propagation across all subscription types ([7a5207d](https://github.com/silviolleite/loafer-natsx/commit/7a5207d9669bc326fb552cdd29943c3c6d4c8d11))
+
+
+### Bug Fixes
+
+* **producer:** fix flaky TestJetStreamStrategy_Publish_Duplicate test ([c778dd0](https://github.com/silviolleite/loafer-natsx/commit/c778dd05d2ecd8ef01b0246fc869bcc0c977308d))
+
 ## [1.8.0](https://github.com/silviolleite/loafer-natsx/compare/v1.7.0...v1.8.0) (2026-04-03)
 
 
