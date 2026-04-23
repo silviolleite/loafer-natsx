@@ -27,13 +27,13 @@ func (b *Broker) instrument(
 		res, err := handler(ctx, data)
 
 		b.metrics.observeDuration(subject, time.Since(start))
+		b.metrics.incRequest(subject)
 
 		if err != nil {
 			b.metrics.incError(subject)
 			return nil, err
 		}
 
-		b.metrics.incRequest(subject)
 		return res, nil
 	}
 }

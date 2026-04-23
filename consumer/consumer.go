@@ -2,6 +2,7 @@ package consumer
 
 import (
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/nats-io/nats.go"
@@ -56,7 +57,8 @@ func (p *Consumer) Start(ctx context.Context, route *router.Route, handler Handl
 func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	sub, err := p.nc.Subscribe(route.Subject(), func(msg *nats.Msg) {
 		p.safeHandle(ctx, msg.Subject, func() {
-			_, err := handler(ctx, msg.Data)
+			hctx := WithMetadata(ctx, metadataFromCoreMsg(msg))
+			_, err := handler(hctx, msg.Data)
 			if err != nil {
 				p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 			}
@@ -75,7 +77,8 @@ func (p *Consumer) startPubSub(ctx context.Context, route *router.Route, handler
 func (p *Consumer) startQueue(ctx context.Context, route *router.Route, handler HandlerFunc) error {
 	sub, err := p.nc.QueueSubscribe(route.Subject(), route.QueueGroup(), func(msg *nats.Msg) {
 		p.safeHandle(ctx, msg.Subject, func() {
-			_, err := handler(ctx, msg.Data)
+			hctx := WithMetadata(ctx, metadataFromCoreMsg(msg))
+			_, err := handler(hctx, msg.Data)
 			if err != nil {
 				p.logger.Error("handler error", "subject", msg.Subject, "error", err)
 			}
@@ -111,14 +114,15 @@ func (p *Consumer) handleRequestReplyMessage(
 	handler HandlerFunc,
 	msg *nats.Msg,
 ) {
-	result, hErr := handler(ctx, msg.Data)
+	hctx := WithMetadata(ctx, metadataFromCoreMsg(msg))
+	result, hErr := handler(hctx, msg.Data)
 
 	if route.ReplyFunc() == nil {
 		p.defaultReply(msg, hErr)
 		return
 	}
 
-	data, headers, rErr := route.ReplyFunc()(ctx, result, hErr)
+	data, headers, rErr := route.ReplyFunc()(hctx, result, hErr)
 	if rErr != nil {
 		p.logger.Error("reply builder error", "subject", msg.Subject, "error", rErr)
 		return
@@ -184,7 +188,9 @@ func (p *Consumer) handleJetStreamMessage(
 	msg jetstream.Msg,
 ) {
 	meta, _ := msg.Metadata()
-	_, hErr := handler(ctx, msg.Data())
+	hctx := WithMetadata(ctx, metadataFromJetStreamMsg(msg))
+
+	_, hErr := handler(hctx, msg.Data())
 	if hErr != nil {
 		p.handleJetStreamError(route, msg, meta, hErr)
 		return
@@ -201,9 +207,71 @@ func (p *Consumer) handleJetStreamError(
 	meta *jetstream.MsgMetadata,
 	err error,
 ) {
+	// Permanent failure: ack the message to stop redelivery.
+	if errors.Is(err, loafernatsx.ErrPermanentFailure) {
+		p.logger.Error(
+			"permanent handler failure - ack without retry",
+			"subject", route.Subject(),
+			"error", err,
+		)
+
+		if ackErr := msg.Ack(); ackErr != nil {
+			p.logger.Error(
+				"ack error on permanent failure",
+				"subject", route.Subject(),
+				"error", ackErr,
+			)
+		}
+		return
+	}
+
+	// Explicit request to send directly to DLQ, skipping retries.
+	if errors.Is(err, loafernatsx.ErrSendToDLQ) {
+		p.logger.Error(
+			"handler requested DLQ routing",
+			"subject", route.Subject(),
+			"error", err,
+		)
+
+		if route.DLQEnabled() && meta != nil {
+			p.publishToDLQ(route, msg, meta, err)
+			return
+		}
+
+		// DLQ disabled → fall back to ack to avoid infinite retries.
+		if ackErr := msg.Ack(); ackErr != nil {
+			p.logger.Error(
+				"ack error on DLQ fallback",
+				"subject", route.Subject(),
+				"error", ackErr,
+			)
+		}
+		return
+	}
+
+	// Delayed redelivery: the handler requests a specific backoff duration.
+	var nakDelay loafernatsx.NakWithDelayError
+	if errors.As(err, &nakDelay) {
+		p.logger.Error(
+			"handler requested delayed redelivery",
+			"subject", route.Subject(),
+			"delay", nakDelay.Delay,
+			"error", err,
+		)
+
+		if nakErr := msg.NakWithDelay(nakDelay.Delay); nakErr != nil {
+			p.logger.Error(
+				"nak-with-delay error",
+				"subject", route.Subject(),
+				"error", nakErr,
+			)
+		}
+		return
+	}
+
 	p.logger.Error("handler error", "subject", route.Subject(), "error", err)
 
-	if route.DLQEnabled() && int(meta.NumDelivered) >= route.MaxDeliver() {
+	if route.DLQEnabled() && meta != nil && int(meta.NumDelivered) >= route.MaxDeliver() {
 		p.publishToDLQ(route, msg, meta, err)
 		return
 	}
