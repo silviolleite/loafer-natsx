@@ -12,6 +12,7 @@ import (
 
 	"github.com/silviolleite/loafer-natsx/broker"
 	"github.com/silviolleite/loafer-natsx/conn"
+	"github.com/silviolleite/loafer-natsx/consumer"
 	"github.com/silviolleite/loafer-natsx/router"
 	"github.com/silviolleite/loafer-natsx/typed"
 )
@@ -33,7 +34,6 @@ func main() {
 	log := slog.Default()
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	// Connect to NATS
 	nc, err := conn.Connect(
 		nats.DefaultURL,
 		conn.WithName("typed-broker"),
@@ -47,7 +47,6 @@ func main() {
 
 	codec := typed.JSONCodec[Order]{}
 
-	// Create routes
 	createdRoute, err := router.New(
 		router.TypeJetStream,
 		"orders.created",
@@ -72,14 +71,22 @@ func main() {
 		return
 	}
 
-	// Create broker
 	br := broker.New(nc, log, broker.WithWorkers(2))
 
-	// Register routes with typed handlers
+	// WrapHandler decodes raw bytes into Order before calling the handler.
+	// The context carries consumer.Metadata — use consumer.MetadataFromContext
+	// to access subject, headers, stream, sequence, and delivery count.
 	r1, _ := broker.NewRouteRegistration(
 		createdRoute,
 		typed.WrapHandler(codec, func(ctx context.Context, msg Order) (any, error) {
-			fmt.Printf("order created: %s (%.2f)\n", msg.OrderID, msg.Amount)
+			correlationID := ""
+			if meta, ok := consumer.MetadataFromContext(ctx); ok {
+				correlationID = meta.Headers.Get(consumer.HeaderCorrelationIDKey)
+			}
+
+			fmt.Printf("order created: %s (%.2f) correlation_id=%s\n",
+				msg.OrderID, msg.Amount, correlationID)
+
 			return nil, nil
 		}),
 	)
@@ -87,7 +94,14 @@ func main() {
 	r2, _ := broker.NewRouteRegistration(
 		cancelledRoute,
 		typed.WrapHandler(codec, func(ctx context.Context, msg Order) (any, error) {
-			fmt.Printf("order cancelled: %s\n", msg.OrderID)
+			correlationID := ""
+			if meta, ok := consumer.MetadataFromContext(ctx); ok {
+				correlationID = meta.Headers.Get(consumer.HeaderCorrelationIDKey)
+			}
+
+			fmt.Printf("order cancelled: %s correlation_id=%s\n",
+				msg.OrderID, correlationID)
+
 			return nil, nil
 		}),
 	)
@@ -102,7 +116,7 @@ func main() {
 
 	// output:
 	// 2026/02/14 10:00:00 INFO typed broker started with 2 routes
-	// order created: 1 (99.90)
-	// order cancelled: 2
+	// order created: 1 (99.90) correlation_id=cid-1
+	// order cancelled: 2 correlation_id=cid-2
 	// 2026/02/14 10:00:05 INFO typed broker shutdown complete
 }
