@@ -2,7 +2,9 @@ package producer_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
+	"time"
 
 	natstest "github.com/nats-io/nats-server/v2/test"
 	"github.com/nats-io/nats.go"
@@ -106,9 +108,13 @@ func TestJetStreamStrategy_Publish_Duplicate(t *testing.T) {
 	js, err := jetstream.New(nc)
 	assert.NoError(t, err)
 
+	streamName := fmt.Sprintf("DEDUP_%d", time.Now().UnixNano())
+	subject := fmt.Sprintf("test.dedup.%d", time.Now().UnixNano())
+
 	_, err = js.CreateStream(context.Background(), jetstream.StreamConfig{
-		Name:     "DEDUP",
-		Subjects: []string{"test.dedup"},
+		Name:       streamName,
+		Subjects:   []string{subject},
+		Duplicates: 2 * time.Minute,
 	})
 	assert.NoError(t, err)
 
@@ -117,7 +123,7 @@ func TestJetStreamStrategy_Publish_Duplicate(t *testing.T) {
 	pubOpt := producer.PublishOptions{}
 	producer.PublishWithMsgID("unique-1")(&pubOpt)
 
-	msg := &nats.Msg{Subject: "test.dedup", Data: []byte("data")}
+	msg := &nats.Msg{Subject: subject, Data: []byte("data")}
 
 	first, err := strategy.Publish(context.Background(), msg, pubOpt)
 	assert.NoError(t, err)
