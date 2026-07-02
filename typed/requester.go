@@ -92,7 +92,7 @@ func (r *Requester[T, R]) Request(ctx context.Context, msg T) (R, error) {
 		return zero, fmt.Errorf("typed: encode request: %w", err)
 	}
 
-	resp, err := r.inner.Request(ctx, data)
+	resp, err := r.inner.Request(ctx, &nats.Msg{Data: data})
 	if err != nil {
 		return zero, err
 	}

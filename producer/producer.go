@@ -93,11 +93,29 @@ func (p *Producer) Publish(
 // does not support request operations.
 func (p *Producer) Request(
 	ctx context.Context,
-	data []byte,
+	msg *nats.Msg,
+) (*Response, error) {
+	return p.RequestMsg(ctx, msg)
+}
+
+// RequestMsg sends a request to the configured subject with the provided Msg and waits for a response.
+// Only Core NATS producers support request operations.
+// When a request timeout is configured via WithRequestTimeout, the context is
+// wrapped with a deadline so the call does not block indefinitely if the
+// consumer becomes unavailable.
+// Returns a *Response containing the reply data and headers, or an error if the configured Publisher
+// does not support request operations.
+func (p *Producer) RequestMsg(
+	ctx context.Context,
+	msg *nats.Msg,
 ) (*Response, error) {
 	r, ok := p.publisher.(Requester)
 	if !ok {
 		return nil, loafernatsx.ErrRequestNotSupported
+	}
+
+	if msg.Subject == "" {
+		msg.Subject = p.subject
 	}
 
 	if p.requestTimeout > 0 {
@@ -106,7 +124,7 @@ func (p *Producer) Request(
 		defer cancel()
 	}
 
-	resp, err := r.Request(ctx, p.subject, data)
+	resp, err := r.Request(ctx, msg)
 	if err != nil {
 		if ctx.Err() != nil {
 			return nil, fmt.Errorf("%w: %w", loafernatsx.ErrRequestTimeout, err)

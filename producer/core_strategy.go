@@ -28,15 +28,14 @@ func (c *coreStrategy) Publish(
 	return &PublishResult{}, nil
 }
 
-// Request sends a request to a specified NATS subject and waits for a response within the provided context.
+// Request sends a request with a specified Msg and waits for a response within the provided context.
 func (c *coreStrategy) Request(
 	ctx context.Context,
-	subject string,
-	data []byte,
+	msg *nats.Msg,
 ) (*Response, error) {
-	msg, err := c.nc.RequestWithContext(ctx, subject, data)
+	reply, err := c.nc.RequestMsgWithContext(ctx, msg)
 	if err != nil {
 		return nil, err
 	}
-	return &Response{Data: msg.Data, Header: msg.Header}, nil
+	return &Response{Data: reply.Data, Header: reply.Header}, nil
 }

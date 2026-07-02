@@ -79,7 +79,7 @@ func main() {
 	reqCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
 
-	requestPayload := []byte(`{"order_id":"123"}`)
+	requestPayload := &nats.Msg{Data: []byte(`{"order_id":"123"}`)}
 
 	resp, err := prod.Request(reqCtx, requestPayload)
 	if err != nil {

@@ -32,7 +32,7 @@ type mockRequester struct {
 	mockPublisher
 }
 
-func (m *mockRequester) Request(_ context.Context, _ string, _ []byte) (*producer.Response, error) {
+func (m *mockRequester) Request(_ context.Context, _ *nats.Msg) (*producer.Response, error) {
 	return m.reqResp, m.reqErr
 }
 

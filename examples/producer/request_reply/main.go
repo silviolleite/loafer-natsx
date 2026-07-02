@@ -77,7 +77,7 @@ func sendRequest(prod *producer.Producer, id int) {
 
 	start := time.Now()
 
-	resp, err := prod.Request(ctx, []byte(payload))
+	resp, err := prod.Request(ctx, &nats.Msg{Data: []byte(payload)})
 	if err != nil {
 		slog.Error("request failed",
 			"id", id,
