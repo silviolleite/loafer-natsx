@@ -20,6 +20,8 @@ type mockPublisher struct {
 	called bool
 }
 
+var _ producer.Publisher = (*mockPublisher)(nil)
+
 func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.PublishOptions) (*producer.PublishResult, error) {
 	m.called = true
 	m.msg = msg
@@ -37,12 +39,9 @@ type mockRequester struct {
 	blockUntilCtxDone bool
 }
 
-var (
-	_ producer.Publisher = (*mockPublisher)(nil)
-	_ producer.Requester = (*mockRequester)(nil)
-)
+var _ producer.Requester = (*mockRequester)(nil)
 
-func (m *mockRequester) Request(ctx context.Context, _ *nats.Msg) (*producer.Response, error) {
+func (m *mockRequester) Request(ctx context.Context, _ string, _ []byte) (*producer.Response, error) {
 	m.capturedCtx = ctx
 	if m.blockUntilCtxDone {
 		<-ctx.Done()
@@ -113,7 +112,7 @@ func TestRequest_NotSupported(t *testing.T) {
 
 	p, _ := producer.New(mp, "test.subject")
 
-	resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+	resp, err := p.Request(context.Background(), []byte("data"))
 	assert.Nil(t, resp)
 	assert.ErrorIs(t, err, loafernatsx.ErrRequestNotSupported)
 }
@@ -125,7 +124,7 @@ func TestRequest_Success(t *testing.T) {
 
 	p, _ := producer.New(mr, "test.subject")
 
-	resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+	resp, err := p.Request(context.Background(), []byte("data"))
 	assert.NoError(t, err)
 	assert.Equal(t, []byte("ok"), resp.Data)
 }
@@ -137,7 +136,7 @@ func TestRequest_Error(t *testing.T) {
 
 	p, _ := producer.New(mr, "test.subject")
 
-	resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+	resp, err := p.Request(context.Background(), []byte("data"))
 	assert.Nil(t, resp)
 	assert.Error(t, err)
 }
@@ -151,7 +150,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		p, err := producer.New(mr, "test.subject")
 		assert.NoError(t, err)
 
-		_, err = p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+		_, err = p.Request(context.Background(), []byte("data"))
 		assert.NoError(t, err)
 
 		deadline, ok := mr.capturedCtx.Deadline()
@@ -167,7 +166,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		p, err := producer.New(mr, "test.subject", producer.WithRequestTimeout(5*time.Second))
 		assert.NoError(t, err)
 
-		_, err = p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+		_, err = p.Request(context.Background(), []byte("data"))
 		assert.NoError(t, err)
 
 		deadline, ok := mr.capturedCtx.Deadline()
@@ -187,7 +186,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), callerTimeout)
 		defer cancel()
 
-		_, err = p.Request(ctx, &nats.Msg{Data: []byte("data")})
+		_, err = p.Request(ctx, []byte("data"))
 		assert.NoError(t, err)
 
 		deadline, ok := mr.capturedCtx.Deadline()
@@ -203,7 +202,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		p, err := producer.New(mr, "test.subject", producer.WithoutRequestTimeout())
 		assert.NoError(t, err)
 
-		_, err = p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+		_, err = p.Request(context.Background(), []byte("data"))
 		assert.NoError(t, err)
 
 		_, ok := mr.capturedCtx.Deadline()
@@ -218,7 +217,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		p, err := producer.New(mr, "test.subject", producer.WithRequestTimeout(10*time.Millisecond))
 		assert.NoError(t, err)
 
-		resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+		resp, err := p.Request(context.Background(), []byte("data"))
 		assert.Nil(t, resp)
 		assert.ErrorIs(t, err, loafernatsx.ErrRequestTimeout)
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
@@ -232,7 +231,7 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		p, err := producer.New(mr, "test.subject", producer.WithoutRequestTimeout())
 		assert.NoError(t, err)
 
-		resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("data")})
+		resp, err := p.Request(context.Background(), []byte("data"))
 		assert.Nil(t, resp)
 		assert.Error(t, err)
 		assert.False(t, errors.Is(err, loafernatsx.ErrRequestTimeout))

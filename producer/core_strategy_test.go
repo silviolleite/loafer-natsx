@@ -82,7 +82,7 @@ func TestCoreStrategy_Request(t *testing.T) {
 		strategy := producer.NewCoreStrategy(nc)
 		req := strategy.(producer.Requester)
 
-		resp, err := req.Request(context.Background(), &nats.Msg{Subject: "test.req", Data: []byte("ping")})
+		resp, err := req.Request(context.Background(), "test.req", []byte("ping"))
 		require.NoError(t, err)
 		assert.Equal(t, []byte("ok"), resp.Data)
 		assert.Equal(t, "success", resp.Header.Get("X-Status"))
@@ -103,7 +103,7 @@ func TestCoreStrategy_Request(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
 
-		resp, err := req.Request(ctx, &nats.Msg{Subject: "test.no.responders", Data: []byte("ping")})
+		resp, err := req.Request(ctx, "test.no.responders", []byte("ping"))
 		assert.Nil(t, resp)
 		assert.Error(t, err)
 	})
@@ -128,7 +128,7 @@ func TestProducer_RequestTimeout_Integration(t *testing.T) {
 		require.NoError(t, err)
 
 		start := time.Now()
-		resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("ping")})
+		resp, err := p.Request(context.Background(), []byte("ping"))
 		elapsed := time.Since(start)
 
 		assert.Nil(t, resp)
@@ -153,7 +153,7 @@ func TestProducer_RequestTimeout_Integration(t *testing.T) {
 		p, err := producer.New(strategy, "test.fast", producer.WithRequestTimeout(5*time.Second))
 		require.NoError(t, err)
 
-		resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("ping")})
+		resp, err := p.Request(context.Background(), []byte("ping"))
 		require.NoError(t, err)
 		assert.Equal(t, []byte("pong"), resp.Data)
 	})
@@ -175,7 +175,7 @@ func TestProducer_RequestTimeout_Integration(t *testing.T) {
 		p, err := producer.New(strategy, "test.default")
 		require.NoError(t, err)
 
-		resp, err := p.Request(context.Background(), &nats.Msg{Data: []byte("ping")})
+		resp, err := p.Request(context.Background(), []byte("ping"))
 		require.NoError(t, err)
 		assert.Equal(t, []byte("pong"), resp.Data)
 	})

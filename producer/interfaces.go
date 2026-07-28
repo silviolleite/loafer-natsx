@@ -18,7 +18,15 @@ type Publisher interface {
 // Requester defines an interface for sending requests with a subject and data and receiving a response.
 type Requester interface {
 
-	// Request sends a request with the specified MSg, waits for a response,
+	// Request sends a request with the specified subject and data, waits for a response,
 	// and returns a *Response containing the reply data and headers, or an error.
-	Request(ctx context.Context, msg *nats.Msg) (*Response, error)
+	Request(ctx context.Context, subject string, data []byte) (*Response, error)
+}
+
+// RequestMsger defines an interface for sending nats Msg requests and receiving a response.
+type RequestMsger interface {
+
+	// RequestMsg sends a request with the specified Msg, waits for a response,
+	// and returns a *Response containing the reply data and headers, or an error.
+	RequestMsg(ctx context.Context, msg *nats.Msg) (*Response, error)
 }

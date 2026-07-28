@@ -93,9 +93,12 @@ func (p *Producer) Publish(
 // does not support request operations.
 func (p *Producer) Request(
 	ctx context.Context,
-	msg *nats.Msg,
+	data []byte,
 ) (*Response, error) {
-	return p.RequestMsg(ctx, msg)
+	return p.RequestMsg(ctx, &nats.Msg{
+		Subject: p.subject,
+		Data:    data,
+	})
 }
 
 // RequestMsg sends a request to the configured subject with the provided Msg and waits for a response.
@@ -108,12 +111,7 @@ func (p *Producer) Request(
 func (p *Producer) RequestMsg(
 	ctx context.Context,
 	msg *nats.Msg,
-) (*Response, error) {
-	r, ok := p.publisher.(Requester)
-	if !ok {
-		return nil, loafernatsx.ErrRequestNotSupported
-	}
-
+) (resp *Response, err error) {
 	if msg.Subject == "" {
 		msg.Subject = p.subject
 	}
@@ -124,14 +122,19 @@ func (p *Producer) RequestMsg(
 		defer cancel()
 	}
 
-	resp, err := r.Request(ctx, msg)
-	if err != nil {
-		if ctx.Err() != nil {
-			return nil, fmt.Errorf("%w: %w", loafernatsx.ErrRequestTimeout, err)
-		}
-
-		return nil, err
+	if r, ok := p.publisher.(RequestMsger); ok {
+		resp, err = r.RequestMsg(ctx, msg)
+	} else if r, ok := p.publisher.(Requester); ok {
+		resp, err = r.Request(ctx, msg.Subject, msg.Data)
+	} else {
+		err = loafernatsx.ErrRequestNotSupported
+		return
 	}
 
-	return resp, nil
+	if err != nil {
+		if ctx.Err() != nil {
+			err = fmt.Errorf("%w: %w", loafernatsx.ErrRequestTimeout, err)
+		}
+	}
+	return
 }
