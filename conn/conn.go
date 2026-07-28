@@ -41,6 +41,9 @@ func Connect(url string, opts ...Option) (*nats.Conn, error) {
 		nats.MaxReconnects(cfg.maxReconnects),
 		nats.ReconnectWait(cfg.reconnectWait),
 	}
+	if cfg.tls != nil {
+		options = append(options, nats.Secure(cfg.tls))
+	}
 
 	nc, err := nats.Connect(url, options...)
 	if err != nil {
