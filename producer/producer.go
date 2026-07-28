@@ -122,11 +122,12 @@ func (p *Producer) RequestMsg(
 		defer cancel()
 	}
 
-	if r, ok := p.publisher.(RequestMsger); ok {
+	switch r := p.publisher.(type) {
+	case RequestMsger:
 		resp, err = r.RequestMsg(ctx, msg)
-	} else if r, ok := p.publisher.(Requester); ok {
+	case Requester:
 		resp, err = r.Request(ctx, msg.Subject, msg.Data)
-	} else {
+	default:
 		err = loafernatsx.ErrRequestNotSupported
 		return
 	}
