@@ -42,6 +42,10 @@ func Connect(url string, opts ...Option) (*nats.Conn, error) {
 		nats.ReconnectWait(cfg.reconnectWait),
 	}
 
+	if cfg.tlsConfig != nil {
+		options = append(options, nats.Secure(cfg.tlsConfig))
+	}
+
 	nc, err := nats.Connect(url, options...)
 	if err != nil {
 		return nil, err

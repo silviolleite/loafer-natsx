@@ -1,6 +1,7 @@
 package conn_test
 
 import (
+	"crypto/tls"
 	"net"
 	"testing"
 	"time"
@@ -77,6 +78,32 @@ func TestConnect_WithTimeout(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, nc)
 	assert.Equal(t, 2*time.Second, nc.Opts.Timeout)
+
+	nc.Close()
+}
+
+func TestConnect_WithSecure_FailsAgainstNonTLSServer(t *testing.T) {
+	s, url := runServer()
+	defer s.Shutdown()
+
+	nc, err := conn.Connect(
+		url,
+		conn.WithSecure(&tls.Config{MinVersion: tls.VersionTLS12}),
+		conn.WithTimeout(500*time.Millisecond),
+	)
+
+	assert.Error(t, err)
+	assert.Nil(t, nc)
+}
+
+func TestConnect_WithSecure_NilConfigKeepsPlainConnection(t *testing.T) {
+	s, url := runServer()
+	defer s.Shutdown()
+
+	nc, err := conn.Connect(url, conn.WithSecure(nil))
+	assert.NoError(t, err)
+	assert.NotNil(t, nc)
+	assert.True(t, nc.IsConnected())
 
 	nc.Close()
 }

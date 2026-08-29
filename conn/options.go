@@ -1,6 +1,9 @@
 package conn
 
-import "time"
+import (
+	"crypto/tls"
+	"time"
+)
 
 // Option is a functional option type used to configure connection settings dynamically.
 type Option func(*config)
@@ -30,5 +33,14 @@ func WithMaxReconnects(n int) Option {
 func WithTimeout(d time.Duration) Option {
 	return func(c *config) {
 		c.timeout = d
+	}
+}
+
+// WithSecure enables a secure (TLS) connection to the NATS server using the
+// provided *tls.Config. When set, the client requires the server to support
+// TLS and will fail to connect to a server that does not offer it.
+func WithSecure(tlsConfig *tls.Config) Option {
+	return func(c *config) {
+		c.tlsConfig = tlsConfig
 	}
 }
