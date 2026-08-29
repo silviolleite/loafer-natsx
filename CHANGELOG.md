@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0](https://github.com/silviolleite/loafer-natsx/compare/v1.9.0...v1.10.0) (2026-08-29)
+
+
+### Features
+
+* **conn:** add WithSecure option for TLS connections ([293dbbc](https://github.com/silviolleite/loafer-natsx/commit/293dbbc13edf3df6e813935ba059064a2cc11782))
+* **middleware:** add composable Prometheus and OpenTelemetry middlewares ([1fa5391](https://github.com/silviolleite/loafer-natsx/commit/1fa5391afa25718965ea9ab67908291a1f9d801d))
+* **producer:** add RequestMsg to preserve headers on requests ([93042d7](https://github.com/silviolleite/loafer-natsx/commit/93042d7766f46b64a6587b2ef20c569f7ffc6cec))
+
 ## [1.9.0](https://github.com/silviolleite/loafer-natsx/compare/v1.8.0...v1.9.0) (2026-04-23)
 
 
