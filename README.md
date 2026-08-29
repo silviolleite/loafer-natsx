@@ -136,6 +136,72 @@ The broker supports Prometheus metrics out of the box via the `WithMetrics` opti
 | `loafer_request_duration_seconds`   | Histogram | `subject` | Duration of message handler execution      |
 | `loafer_inflight`                   | Gauge     | `subject` | Number of handlers currently being executed|
 
+------------------------------------------------------------------------
+
+# Middleware
+
+Observability is built on a small, composable middleware layer in the
+`middleware` package. A middleware wraps a handler with cross-cutting behavior
+while keeping the handler signature unchanged:
+
+```go
+type Handler func(ctx context.Context, data []byte) (any, error)
+type Middleware func(Handler) Handler
+```
+
+Middlewares are composed with `middleware.Chain` using first-is-outermost
+semantics and wired into the broker in two scopes:
+
+-   **Global**, applied to every route, via `broker.WithGlobalMiddleware(...)`
+-   **Per route**, applied to a single registration, via the optional variadic
+    argument of `broker.NewRouteRegistration(route, handler, mws...)`
+
+Global middlewares run outermost (first in, last out), then per-registration
+middlewares, then the user handler.
+
+The package ships two backends out of the box, and any custom
+`middleware.Middleware` can be plugged in the same way — the library is not
+limited to Prometheus and OpenTelemetry.
+
+## Prometheus (`middleware.Metrics`)
+
+Instruments processing with the `loafer_*` collectors listed above, labeled by
+subject. It registers collectors idempotently, so it is safe to build for
+multiple routes on the same registerer.
+
+```go
+br := broker.New(nc, log,
+    broker.WithGlobalMiddleware(
+        middleware.Metrics(middleware.WithMetricsRegisterer(prometheus.DefaultRegisterer)),
+    ),
+)
+```
+
+`broker.WithMetrics(reg)` remains available as convenience sugar over
+`WithGlobalMiddleware(middleware.Metrics(middleware.WithMetricsRegisterer(reg)))`.
+
+## OpenTelemetry (`middleware.OTel`)
+
+Creates a `SpanKindConsumer` span named `loafer.process/<subject>` per message,
+extracts any trace context propagated through the NATS message headers, and sets
+the span status from the handler outcome.
+
+```go
+br := broker.New(nc, log,
+    broker.WithGlobalMiddleware(
+        middleware.OTel(),                    // continue the incoming trace, or
+        // middleware.OTel(middleware.WithLinkFromContext()), // start a new root linked to it
+        middleware.Metrics(),
+    ),
+)
+```
+
+Options: `WithTracerProvider`, `WithPropagator`, and `WithLinkFromContext`
+(useful for long-lived consumers to avoid inheriting an unbounded producer
+trace while preserving causality through a span link).
+
+See the [middleware example](https://github.com/silviolleite/loafer-natsx/tree/main/examples/middleware).
+
 
 ------------------------------------------------------------------------
 

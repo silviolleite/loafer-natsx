@@ -10,6 +10,7 @@ import (
 	loafernatsx "github.com/silviolleite/loafer-natsx"
 
 	"github.com/silviolleite/loafer-natsx/consumer"
+	"github.com/silviolleite/loafer-natsx/middleware"
 
 	"github.com/silviolleite/loafer-natsx/logger"
 )
@@ -18,10 +19,10 @@ const defaultWorkers = 5
 
 // Broker represents a message broker that coordinates message routing and processing using NATS and configurable workers.
 type Broker struct {
-	log     logger.Logger
-	nc      *nats.Conn
-	metrics *brokerMetrics
-	workers int
+	log         logger.Logger
+	nc          *nats.Conn
+	middlewares []middleware.Middleware
+	workers     int
 }
 
 // New creates a new Broker instance with the given NATS connection, logger, and optional configuration options.
@@ -39,10 +40,10 @@ func New(nc *nats.Conn, log logger.Logger, opts ...Option) *Broker {
 	}
 
 	return &Broker{
-		nc:      nc,
-		log:     log,
-		workers: cfg.workers,
-		metrics: cfg.metrics,
+		nc:          nc,
+		log:         log,
+		workers:     cfg.workers,
+		middlewares: cfg.globalMiddlewares,
 	}
 }
 
@@ -123,7 +124,7 @@ func (b *Broker) runRoute(
 				}
 			}()
 
-			wrapped := b.instrument(reg)
+			wrapped := b.compose(reg)
 			if sErr := cons.Start(ctx, reg.Route(), wrapped); sErr != nil {
 				b.log.Error(
 					"route worker failed",
