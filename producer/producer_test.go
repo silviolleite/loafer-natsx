@@ -49,6 +49,45 @@ func (m *mockRequester) Request(ctx context.Context, _ string, _ []byte) (*produ
 	return m.response, nil
 }
 
+type mockRequestMsger struct {
+	reqErr      error
+	capturedCtx context.Context
+	capturedMsg *nats.Msg
+	response    *producer.Response
+	mockPublisher
+	blockUntilCtxDone bool
+}
+
+func (m *mockRequestMsger) RequestMsg(ctx context.Context, msg *nats.Msg) (*producer.Response, error) {
+	m.capturedCtx = ctx
+	m.capturedMsg = msg
+	if m.blockUntilCtxDone {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	if m.reqErr != nil {
+		return nil, m.reqErr
+	}
+	return m.response, nil
+}
+
+type mockBothRequester struct {
+	response *producer.Response
+	mockPublisher
+	requestMsgCalled bool
+	requestCalled    bool
+}
+
+func (m *mockBothRequester) RequestMsg(_ context.Context, _ *nats.Msg) (*producer.Response, error) {
+	m.requestMsgCalled = true
+	return m.response, nil
+}
+
+func (m *mockBothRequester) Request(_ context.Context, _ string, _ []byte) (*producer.Response, error) {
+	m.requestCalled = true
+	return m.response, nil
+}
+
 func TestNew_MissingSubject(t *testing.T) {
 	p, err := producer.New(&mockPublisher{}, "")
 	assert.Nil(t, p)
@@ -231,5 +270,175 @@ func TestRequest_WithRequestTimeout(t *testing.T) {
 		assert.Nil(t, resp)
 		assert.Error(t, err)
 		assert.False(t, errors.Is(err, loafernatsx.ErrRequestTimeout))
+	})
+}
+
+func TestRequestMsg_NilMessage(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	resp, err := p.RequestMsg(context.Background(), nil)
+	assert.Nil(t, resp)
+	assert.ErrorIs(t, err, loafernatsx.ErrMissingMessage)
+}
+
+func TestRequestMsg_NotSupported(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	resp, err := p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.Nil(t, resp)
+	assert.ErrorIs(t, err, loafernatsx.ErrRequestNotSupported)
+}
+
+func TestRequestMsg_UsesRequestMsgerWhenAvailable(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{Data: []byte("ok")},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	resp, err := p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("ok"), resp.Data)
+}
+
+func TestRequestMsg_PrefersRequestMsgerOverRequester(t *testing.T) {
+	mb := &mockBothRequester{
+		response: &producer.Response{Data: []byte("ok")},
+	}
+
+	p, err := producer.New(mb, "test.subject")
+	assert.NoError(t, err)
+
+	resp, err := p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("ok"), resp.Data)
+	assert.True(t, mb.requestMsgCalled)
+	assert.False(t, mb.requestCalled)
+}
+
+func TestRequest_DelegatesToRequestMsger(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{Data: []byte("ok")},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	resp, err := p.Request(context.Background(), []byte("data"))
+	assert.NoError(t, err)
+	assert.Equal(t, []byte("ok"), resp.Data)
+	assert.Equal(t, "test.subject", mrm.capturedMsg.Subject)
+	assert.Equal(t, []byte("data"), mrm.capturedMsg.Data)
+}
+
+func TestRequestMsg_DefaultsSubjectWhenEmpty(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, "test.subject", mrm.capturedMsg.Subject)
+}
+
+func TestRequestMsg_PreservesExplicitSubject(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.RequestMsg(context.Background(), &nats.Msg{Subject: "override.subject", Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, "override.subject", mrm.capturedMsg.Subject)
+}
+
+func TestRequestMsg_PropagatesHeaders(t *testing.T) {
+	mrm := &mockRequestMsger{
+		response: &producer.Response{},
+	}
+
+	p, err := producer.New(mrm, "test.subject")
+	assert.NoError(t, err)
+
+	h := nats.Header{}
+	h.Set("X-Trace-Id", "abc-123")
+
+	_, err = p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data"), Header: h})
+	assert.NoError(t, err)
+	assert.Equal(t, "abc-123", mrm.capturedMsg.Header.Get("X-Trace-Id"))
+}
+
+func TestRequestMsg_Error(t *testing.T) {
+	mrm := &mockRequestMsger{
+		reqErr: errors.New("fail"),
+	}
+
+	p, err := producer.New(mrm, "test.subject", producer.WithoutRequestTimeout())
+	assert.NoError(t, err)
+
+	resp, err := p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.Nil(t, resp)
+	assert.Error(t, err)
+	assert.False(t, errors.Is(err, loafernatsx.ErrRequestTimeout))
+}
+
+func TestRequestMsg_WithRequestTimeout(t *testing.T) {
+	t.Run("applies configured deadline to context", func(t *testing.T) {
+		mrm := &mockRequestMsger{
+			response: &producer.Response{Data: []byte("ok")},
+		}
+
+		p, err := producer.New(mrm, "test.subject", producer.WithRequestTimeout(5*time.Second))
+		assert.NoError(t, err)
+
+		_, err = p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+		assert.NoError(t, err)
+
+		deadline, ok := mrm.capturedCtx.Deadline()
+		assert.True(t, ok)
+		assert.WithinDuration(t, time.Now().Add(5*time.Second), deadline, 1*time.Second)
+	})
+
+	t.Run("no deadline when timeout explicitly disabled", func(t *testing.T) {
+		mrm := &mockRequestMsger{
+			response: &producer.Response{Data: []byte("ok")},
+		}
+
+		p, err := producer.New(mrm, "test.subject", producer.WithoutRequestTimeout())
+		assert.NoError(t, err)
+
+		_, err = p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+		assert.NoError(t, err)
+
+		_, ok := mrm.capturedCtx.Deadline()
+		assert.False(t, ok)
+	})
+
+	t.Run("returns ErrRequestTimeout when deadline exceeded", func(t *testing.T) {
+		mrm := &mockRequestMsger{
+			blockUntilCtxDone: true,
+		}
+
+		p, err := producer.New(mrm, "test.subject", producer.WithRequestTimeout(10*time.Millisecond))
+		assert.NoError(t, err)
+
+		resp, err := p.RequestMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+		assert.Nil(t, resp)
+		assert.ErrorIs(t, err, loafernatsx.ErrRequestTimeout)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
 	})
 }

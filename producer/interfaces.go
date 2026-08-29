@@ -22,3 +22,13 @@ type Requester interface {
 	// and returns a *Response containing the reply data and headers, or an error.
 	Request(ctx context.Context, subject string, data []byte) (*Response, error)
 }
+
+// RequestMsger defines an interface for sending a full *nats.Msg request and receiving a response.
+// Unlike Requester, it preserves the message headers on the outgoing request, allowing callers to
+// attach correlation IDs, tracing metadata, and other application-specific context.
+type RequestMsger interface {
+
+	// RequestMsg sends a request with the specified message, waits for a response,
+	// and returns a *Response containing the reply data and headers, or an error.
+	RequestMsg(ctx context.Context, msg *nats.Msg) (*Response, error)
+}

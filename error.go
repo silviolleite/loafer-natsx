@@ -12,6 +12,9 @@ const (
 	// ErrMissingSubject indicates an error when the required subject is not provided.
 	ErrMissingSubject = Err("subject is required")
 
+	// ErrMissingMessage indicates that a request operation received a nil message.
+	ErrMissingMessage = Err("message is required")
+
 	// ErrMissingQueueGroup indicates an error when a queue group is required but not provided for the router.
 	ErrMissingQueueGroup = Err("queue group is required for the router")
 

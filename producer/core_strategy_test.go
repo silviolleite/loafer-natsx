@@ -109,6 +109,79 @@ func TestCoreStrategy_Request(t *testing.T) {
 	})
 }
 
+func TestCoreStrategy_RequestMsg(t *testing.T) {
+	t.Run("returns Response and forwards request headers to the responder", func(t *testing.T) {
+		s, url := runServer()
+		defer s.Shutdown()
+
+		nc, err := nats.Connect(url)
+		require.NoError(t, err)
+		defer nc.Close()
+
+		receivedHeader := make(chan nats.Header, 1)
+
+		_, err = nc.Subscribe("test.reqmsg", func(msg *nats.Msg) {
+			receivedHeader <- msg.Header
+
+			reply := &nats.Msg{
+				Data:   []byte("ok"),
+				Header: nats.Header{},
+			}
+			reply.Header.Set("X-Status", "success")
+			reply.Header.Set("X-Custom", "value")
+			_ = msg.RespondMsg(reply)
+		})
+		require.NoError(t, err)
+
+		strategy := producer.NewCoreStrategy(nc)
+		req, ok := strategy.(producer.RequestMsger)
+		require.True(t, ok)
+
+		reqHeader := nats.Header{}
+		reqHeader.Set("X-Trace-Id", "abc-123")
+
+		resp, err := req.RequestMsg(context.Background(), &nats.Msg{
+			Subject: "test.reqmsg",
+			Data:    []byte("ping"),
+			Header:  reqHeader,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, []byte("ok"), resp.Data)
+		assert.Equal(t, "success", resp.Header.Get("X-Status"))
+		assert.Equal(t, "value", resp.Header.Get("X-Custom"))
+
+		select {
+		case h := <-receivedHeader:
+			assert.Equal(t, "abc-123", h.Get("X-Trace-Id"))
+		case <-time.After(2 * time.Second):
+			t.Fatal("request not received")
+		}
+	})
+
+	t.Run("returns nil and error when no responders", func(t *testing.T) {
+		s, url := runServer()
+		defer s.Shutdown()
+
+		nc, err := nats.Connect(url, nats.NoEcho())
+		require.NoError(t, err)
+		defer nc.Close()
+
+		strategy := producer.NewCoreStrategy(nc)
+		req, ok := strategy.(producer.RequestMsger)
+		require.True(t, ok)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+		defer cancel()
+
+		resp, err := req.RequestMsg(ctx, &nats.Msg{
+			Subject: "test.reqmsg.no.responders",
+			Data:    []byte("ping"),
+		})
+		assert.Nil(t, resp)
+		assert.Error(t, err)
+	})
+}
+
 func TestProducer_RequestTimeout_Integration(t *testing.T) {
 	t.Run("times out and returns ErrRequestTimeout when consumer never replies", func(t *testing.T) {
 		s, url := runServer()
