@@ -100,12 +100,20 @@ func main() {
 	regions := []string{"us-east", "us-west", "eu-central", "ap-south", "sa-east"}
 
 	for i, region := range regions {
-		msg := fmt.Sprintf(`{"order_id":"%d","region":"%s"}`, i+1, region)
+		payload := fmt.Sprintf(`{"order_id":"%d","region":"%s"}`, i+1, region)
 
 		h := nats.Header{}
 		h.Set(consumer.HeaderCorrelationIDKey, fmt.Sprintf("cid-%d", i+1))
 
-		_, err = prod.Publish(ctx, []byte(msg), jsprod.PublishWithHeaders(h))
+		// PublishMsg accepts a fully constructed *nats.Msg, so callers can
+		// attach headers (tracing/correlation metadata) and other message
+		// fields directly. This also works for JetStream producers. When the
+		// message subject is empty, the producer subject ("orders.created")
+		// is used.
+		_, err = prod.PublishMsg(ctx, &nats.Msg{
+			Data:   []byte(payload),
+			Header: h,
+		})
 		if err != nil {
 			slog.Error("publish failed", "error", err)
 			continue

@@ -229,6 +229,42 @@ work unchanged.
 
 ------------------------------------------------------------------------
 
+# Producer
+
+The `producer` package publishes messages to Core NATS or JetStream through
+a shared `Publisher` interface, so the same API works for both transports.
+
+Publishing:
+
+-   `Publish(ctx, data, opts...)` — convenience wrapper that builds a
+    message from the configured subject and the provided payload.
+-   `PublishMsg(ctx, msg, opts...)` — accepts a fully constructed
+    `*nats.Msg`, so callers can attach headers (correlation IDs, tracing
+    metadata) and other message fields directly. This is the recommended
+    way to carry header data on JetStream messages. When the message
+    subject is empty, the producer subject is used.
+
+```go
+h := nats.Header{}
+h.Set("X-Trace-Id", "abc-123")
+
+_, err := prod.PublishMsg(ctx, &nats.Msg{
+    Data:   []byte(`{"order_id":"1"}`),
+    Header: h,
+}, producer.PublishWithMsgID("order-1"))
+```
+
+Publish options: `PublishWithHeaders` sets (and overrides) the message
+headers, and `PublishWithMsgID` enables JetStream deduplication.
+
+Request-Reply (Core NATS):
+
+-   `Request(ctx, data)` — convenience wrapper around `RequestMsg`.
+-   `RequestMsg(ctx, msg)` — sends a full `*nats.Msg` so request headers are
+    preserved on the outgoing request.
+
+------------------------------------------------------------------------
+
 # Dead Letter Queue (DLQ)
 
 When enabled for JetStream routes:
