@@ -53,21 +53,46 @@ func New(
 }
 
 // Publish sends a message to the configured subject using the provided data and optional publish options.
+// It is a convenience wrapper around PublishMsg that builds a *nats.Msg from the configured subject
+// and the provided data. Use PublishMsg when a fully constructed *nats.Msg (with headers or other
+// fields) is required, for example to attach tracing metadata to JetStream messages.
 // Returns a *PublishResult with publish metadata and an error if the publish failed.
 func (p *Producer) Publish(
 	ctx context.Context,
 	data []byte,
 	opts ...PublishOption,
 ) (*PublishResult, error) {
+	return p.PublishMsg(ctx, &nats.Msg{
+		Subject: p.subject,
+		Data:    data,
+	}, opts...)
+}
+
+// PublishMsg sends the provided message to the configured subject and returns publish metadata.
+// Unlike Publish, it accepts a full *nats.Msg so callers can attach headers (correlation IDs,
+// tracing metadata, etc.) and other message fields directly to the outgoing message. This applies
+// to both Core NATS and JetStream producers. When the message subject is empty, the producer
+// subject is used. Publish options still apply: PublishWithMsgID enables JetStream deduplication and
+// PublishWithHeaders overrides any headers already set on the message.
+// Returns a *PublishResult with publish metadata (populated for JetStream, empty for Core NATS),
+// or an error if the message is nil or the publish failed.
+func (p *Producer) PublishMsg(
+	ctx context.Context,
+	msg *nats.Msg,
+	opts ...PublishOption,
+) (*PublishResult, error) {
+	if msg == nil {
+		return nil, loafernatsx.ErrMissingMessage
+	}
+
+	if msg.Subject == "" {
+		msg.Subject = p.subject
+	}
+
 	pubCfg := PublishOptions{}
 
 	for _, opt := range opts {
 		opt(&pubCfg)
-	}
-
-	msg := &nats.Msg{
-		Subject: p.subject,
-		Data:    data,
 	}
 
 	if pubCfg.headers != nil {
@@ -76,8 +101,8 @@ func (p *Producer) Publish(
 
 	p.log.Debug(
 		"publishing message",
-		"subject", p.subject,
-		"payload_bytes", len(data),
+		"subject", msg.Subject,
+		"payload_bytes", len(msg.Data),
 		"headers_count", len(msg.Header),
 	)
 

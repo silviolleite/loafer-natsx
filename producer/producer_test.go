@@ -15,14 +15,16 @@ import (
 )
 
 type mockPublisher struct {
-	err    error
-	msg    *nats.Msg
-	called bool
+	err          error
+	msg          *nats.Msg
+	capturedOpts producer.PublishOptions
+	called       bool
 }
 
-func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, _ producer.PublishOptions) (*producer.PublishResult, error) {
+func (m *mockPublisher) Publish(_ context.Context, msg *nats.Msg, opts producer.PublishOptions) (*producer.PublishResult, error) {
 	m.called = true
 	m.msg = msg
+	m.capturedOpts = opts
 	if m.err != nil {
 		return nil, m.err
 	}
@@ -140,6 +142,129 @@ func TestPublish_Error(t *testing.T) {
 	result, err := p.Publish(context.Background(), []byte("data"))
 	assert.Nil(t, result)
 	assert.Error(t, err)
+}
+
+func TestPublishMsg_NilMessage(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	result, err := p.PublishMsg(context.Background(), nil)
+	assert.Nil(t, result)
+	assert.ErrorIs(t, err, loafernatsx.ErrMissingMessage)
+	assert.False(t, mp.called)
+}
+
+func TestPublishMsg_Success(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	result, err := p.PublishMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.NotNil(t, result)
+	assert.True(t, mp.called)
+	assert.Equal(t, []byte("data"), mp.msg.Data)
+}
+
+func TestPublishMsg_DefaultsSubjectWhenEmpty(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.PublishMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, "test.subject", mp.msg.Subject)
+}
+
+func TestPublishMsg_PreservesExplicitSubject(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.PublishMsg(context.Background(), &nats.Msg{Subject: "override.subject", Data: []byte("data")})
+	assert.NoError(t, err)
+	assert.Equal(t, "override.subject", mp.msg.Subject)
+}
+
+func TestPublishMsg_PropagatesHeaders(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	h := nats.Header{}
+	h.Set("X-Trace-Id", "abc-123")
+
+	_, err = p.PublishMsg(context.Background(), &nats.Msg{Data: []byte("data"), Header: h})
+	assert.NoError(t, err)
+	assert.Equal(t, "abc-123", mp.msg.Header.Get("X-Trace-Id"))
+}
+
+func TestPublishMsg_HeadersOptionOverridesMessageHeaders(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	msgHeaders := nats.Header{}
+	msgHeaders.Set("k", "original")
+
+	optHeaders := nats.Header{}
+	optHeaders.Set("k", "override")
+
+	_, err = p.PublishMsg(
+		context.Background(),
+		&nats.Msg{Data: []byte("data"), Header: msgHeaders},
+		producer.PublishWithHeaders(optHeaders),
+	)
+	assert.NoError(t, err)
+	assert.Equal(t, "override", mp.msg.Header.Get("k"))
+}
+
+func TestPublishMsg_PropagatesMsgIDOption(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.PublishMsg(
+		context.Background(),
+		&nats.Msg{Data: []byte("data")},
+		producer.PublishWithMsgID("dedup-1"),
+	)
+	assert.NoError(t, err)
+
+	expected := producer.PublishOptions{}
+	producer.PublishWithMsgID("dedup-1")(&expected)
+	assert.Equal(t, expected, mp.capturedOpts)
+}
+
+func TestPublishMsg_Error(t *testing.T) {
+	mp := &mockPublisher{err: errors.New("fail")}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	result, err := p.PublishMsg(context.Background(), &nats.Msg{Data: []byte("data")})
+	assert.Nil(t, result)
+	assert.Error(t, err)
+}
+
+func TestPublish_DelegatesToPublishMsg(t *testing.T) {
+	mp := &mockPublisher{}
+
+	p, err := producer.New(mp, "test.subject")
+	assert.NoError(t, err)
+
+	_, err = p.Publish(context.Background(), []byte("data"))
+	assert.NoError(t, err)
+	assert.Equal(t, "test.subject", mp.msg.Subject)
+	assert.Equal(t, []byte("data"), mp.msg.Data)
 }
 
 func TestRequest_NotSupported(t *testing.T) {
