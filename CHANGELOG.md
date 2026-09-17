@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0](https://github.com/silviolleite/loafer-natsx/compare/v1.10.0...v1.11.0) (2026-09-17)
+
+
+### Features
+
+* **producer:** add PublishMsg to publish a full nats.Msg with headers ([ce8ba78](https://github.com/silviolleite/loafer-natsx/commit/ce8ba78843cc5a14b82d55d22464853c6c5e5ee8)), closes [#15](https://github.com/silviolleite/loafer-natsx/issues/15)
+
 ## [1.10.0](https://github.com/silviolleite/loafer-natsx/compare/v1.9.0...v1.10.0) (2026-08-29)
 
 
